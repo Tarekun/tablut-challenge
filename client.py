@@ -52,6 +52,7 @@ def play_game(player: Player, name: str, ip: str):
             print("Waiting for game state from server...")
             try:
                 state_json = _read_string_from_stream(client_socket)
+
                 current_state = parse_state(state_json)
                 print(current_state)
                 board = current_state["board"]
@@ -65,7 +66,7 @@ def play_game(player: Player, name: str, ip: str):
                 else:
                     print(f"It's opponent's turn. Waiting for next state...")
 
-                time.sleep(0.1)  # Small pause to prevent rapid looping/spam
+                # time.sleep(0.1)  # Small pause to prevent rapid looping/spam
 
             except (ConnectionResetError, EOFError) as e:
                 print(f"Server disconnected. Game over. Error: {e}")
@@ -86,27 +87,43 @@ def play_game(player: Player, name: str, ip: str):
 # --- COMMUNICATION UTILITIES (Assuming 4-byte length prefix) ---
 
 
-def _read_string_from_stream(sock: socket.socket) -> str:
-    """Reads a length-prefixed string from a socket."""
-    # 1. Read the 4-byte length prefix
-    raw_length = sock.recv(4)
-    if not raw_length:
-        raise ConnectionResetError("Connection closed by server.")
-    if len(raw_length) < 4:
-        raise EOFError("Incomplete length prefix received.")
-
-    # Convert 4 bytes (big-endian) to an integer
-    length = struct.unpack(">I", raw_length)[0]
-
-    # 2. Read the full payload
+def read_n_bytes(sock: socket.socket, n: int) -> bytes:
     data = b""
-    while len(data) < length:
-        chunk = sock.recv(length - len(data))
+    while len(data) < n:
+        chunk = sock.recv(n - len(data))
         if not chunk:
-            raise ConnectionResetError("Connection closed while reading payload.")
+            # connection closed by peer
+            raise ConnectionResetError("Connection closed by peer while reading")
         data += chunk
+    return data
 
-    return data.decode("utf-8")
+
+def _read_string_from_stream(sock: socket.socket) -> str:
+    # Read 4-byte big-endian length prefix (same as Java DataOutputStream.writeInt)
+    raw_len = read_n_bytes(sock, 4)
+    length = struct.unpack(">I", raw_len)[0]  # big-endian unsigned int
+    if length == 0:
+        return ""
+    payload = read_n_bytes(sock, length)
+    return payload.decode("utf-8")
+    # raw_length = sock.recv(4)
+    # if not raw_length:
+    #     raise ConnectionResetError("Connection closed by server.")
+    # if len(raw_length) < 4:
+    #     raise EOFError("Incomplete length prefix received.")
+
+    # # Convert 4 bytes (big-endian) to an integer
+    # length = struct.unpack(">I", raw_length)[0]
+
+    # # 2. Read the full payload
+    # data = b""
+    # while len(data) < length:
+    #     chunk = sock.recv(length - len(data))
+    #     if not chunk:
+    #         raise ConnectionResetError("Connection closed while reading payload.")
+    #     data += chunk
+
+    # return data.decode("utf-8")
 
 
 def _write_string_to_stream(sock: socket.socket, data: str):

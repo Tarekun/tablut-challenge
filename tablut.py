@@ -5,11 +5,17 @@ class Player(Enum):
     WHITE = "W"
     BLACK = "B"
 
-    def is_white(self):
+    def is_white(self) -> bool:
         return self.value == "W"
 
-    def is_black(self):
+    def is_black(self) -> bool:
         return self.value == "B"
+
+    def complement(self):
+        if self == Player.BLACK:
+            return Player.WHITE
+        else:
+            return Player.BLACK
 
 
 class Turn(Enum):
