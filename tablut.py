@@ -9,8 +9,8 @@ WHITE_BLACK_RATIO = WHITE_PIECES / BLACK_PIECES
 
 
 class Player(Enum):
-    WHITE = "W"
-    BLACK = "B"
+    WHITE = "WHITE"
+    BLACK = "BLACK"
 
     def is_white(self) -> bool:
         return self.value == "W"
@@ -43,6 +43,8 @@ class Turn(Enum):
 
     def plays(self, player: Player) -> bool:
         """Returns True if the given player is playing this turn, False otherwise"""
+        print(self.value)
+        print(player.value)
         return self.value == player.value
 
     def game_finished(self):

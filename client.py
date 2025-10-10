@@ -2,8 +2,8 @@ import socket
 import json
 import struct
 import time
-from typing import Dict
-from tablut import Board, Player, Turn
+from typing import Callable, Dict
+from tablut import Board, GameState, Player, Turn
 from agent import alpha_beta, heuristic, move_sequence, max_depth_criterion
 
 
@@ -11,13 +11,30 @@ WHITE_PORT = 5800
 BLACK_PORT = 5801
 
 
-def play_turn(turn: Turn, board: Board, player: Player, search_algorithm) -> bool:
+def play_turn(
+    client_socket: socket.socket,
+    playing_as: Player,
+    search_algorithm: Callable[[GameState], GameState | None],
+) -> bool:
     """Plays one turn of the game. Returns True if the game is over, False otherwise"""
+    print("pre read string")
+    state_json = _read_string_from_stream(client_socket)
+    print("post read string")
+    board, turn = parse_state(state_json)
+    mock_action = f"""{{
+        "from": "e5",
+        "to": "f4",
+        "turn": "{playing_as.value}"
+    }}"""
 
-    if turn.plays(player):
-        print(f"It's our turn ({player}). Calculating move...")
-        move = search_algorithm(board, player)
+    if turn.plays(playing_as):
+        print(f"It's our turn ({playing_as}). Calculating move...")
+        game_state = GameState(board, playing_as, playing_as)
+        print("RUNNINGG SEARCH")
+        move = search_algorithm(game_state)
         # TODO: encode the move and send it to the server
+        print("sending mock string")
+        _write_string_to_stream(client_socket, mock_action)
         return False
 
     elif turn.game_finished():
@@ -40,9 +57,7 @@ def play_game(player: Player, name: str, ip: str):
         while True:
             print("Waiting for game state from server...")
             try:
-                state_json = _read_string_from_stream(client_socket)
-                board, server_turn = parse_state(state_json)
-                is_over = play_turn(server_turn, board, player, search)
+                is_over = play_turn(client_socket, player, search)
                 if is_over:
                     break
 
@@ -80,13 +95,6 @@ def parse_state(json_string: str) -> tuple[Board, Turn]:
     return Board(state["board"]), turn
 
 
-def encode_action(move_dict: Dict[str, str]) -> str:
-    """
-    ASSUMED FUNCTION: Maps an internal action representation back to the JSON string.
-    """
-    return json.dumps(move_dict)
-
-
 def initialize_connection(player_name: str, ip: str, port: int):
     # 1. Connect to the server
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -105,8 +113,12 @@ def initialize_connection(player_name: str, ip: str, port: int):
 # --- COMMUNICATION UTILITIES (Assuming 4-byte length prefix) ---
 # TODO: review these functions
 
+STRING_FORMAT = "utf-8"
 
-def read_n_bytes(sock: socket.socket, n: int) -> bytes:
+
+def _read_n_bytes(sock: socket.socket, n: int) -> bytes:
+    """Reads exactly `n` bytes from the socket"""
+
     data = b""
     while len(data) < n:
         chunk = sock.recv(n - len(data))
@@ -118,40 +130,26 @@ def read_n_bytes(sock: socket.socket, n: int) -> bytes:
 
 
 def _read_string_from_stream(sock: socket.socket) -> str:
-    # Read 4-byte big-endian length prefix (same as Java DataOutputStream.writeInt)
-    raw_len = read_n_bytes(sock, 4)
-    length = struct.unpack(">I", raw_len)[0]  # big-endian unsigned int
+    # read 4 bytes to get the length of the message
+    raw_len = _read_n_bytes(sock, 4)
+    print(struct.unpack(">I", raw_len))
+    length = struct.unpack(">I", raw_len)[0]
+    #   try this in case of problems
+    #   raw_len = _read_n_bytes(sock, 2)  # java writeUTF with 2-byte length prefix
+    #   length = struct.unpack(">H", raw_len)[0]
     if length == 0:
         return ""
-    payload = read_n_bytes(sock, length)
-    return payload.decode("utf-8")
-    # raw_length = sock.recv(4)
-    # if not raw_length:
-    #     raise ConnectionResetError("Connection closed by server.")
-    # if len(raw_length) < 4:
-    #     raise EOFError("Incomplete length prefix received.")
-
-    # # Convert 4 bytes (big-endian) to an integer
-    # length = struct.unpack(">I", raw_length)[0]
-
-    # # 2. Read the full payload
-    # data = b""
-    # while len(data) < length:
-    #     chunk = sock.recv(length - len(data))
-    #     if not chunk:
-    #         raise ConnectionResetError("Connection closed while reading payload.")
-    #     data += chunk
-
-    # return data.decode("utf-8")
+    # read rest of the message
+    payload = _read_n_bytes(sock, length)
+    return payload.decode(STRING_FORMAT)
 
 
 def _write_string_to_stream(sock: socket.socket, data: str):
     """Writes a length-prefixed string to a socket."""
-    payload = data.encode("utf-8")
+    payload = data.encode(STRING_FORMAT)
     length = len(payload)
 
     # 1. Create the 4-byte length prefix (big-endian)
     raw_length = struct.pack(">I", length)
-
     # 2. Send the prefix and the payload
     sock.sendall(raw_length + payload)

@@ -86,7 +86,7 @@ def alpha_beta(
 
         return (best_move, local_best)
 
-    def search_algorithm(state, player: Player):
+    def search_algorithm(state: GameState):
         (best_move, _) = max_value(state, float("-inf"), float("inf"), 0)
         return best_move
 
