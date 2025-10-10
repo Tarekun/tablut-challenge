@@ -22,7 +22,7 @@ def play_turn(
     print("post read string")
     board, turn = parse_state(state_json)
     mock_action = f"""{{
-        "from": "e5",
+        "from": "e4",
         "to": "f4",
         "turn": "{playing_as.value}"
     }}"""
@@ -120,7 +120,9 @@ def _read_n_bytes(sock: socket.socket, n: int) -> bytes:
     """Reads exactly `n` bytes from the socket"""
 
     data = b""
+    print(f"read n bytes with {sock} and {n}")
     while len(data) < n:
+        print("ciclo")
         chunk = sock.recv(n - len(data))
         if not chunk:
             # connection closed by peer

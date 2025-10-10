@@ -13,10 +13,10 @@ class Player(Enum):
     BLACK = "BLACK"
 
     def is_white(self) -> bool:
-        return self.value == "W"
+        return self.value == Player.WHITE.value
 
     def is_black(self) -> bool:
-        return self.value == "B"
+        return self.value == Player.BLACK.value
 
     def complement(self):
         if self == Player.BLACK:
