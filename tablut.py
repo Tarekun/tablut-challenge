@@ -27,7 +27,7 @@ class Player(Enum):
     def owns_pawn(self, tile: str):
         """Returns True if the player can move the pawn at the given tile, False otherwise"""
         if self == Player.BLACK:
-            return tile == Tile.BLACK
+            return tile == Tile.BLACK.value
         elif self == Player.WHITE:
             return tile == Tile.WHITE.value or tile == Tile.KING.value
         else:
@@ -112,7 +112,7 @@ class Board:
         pass
 
     def pawn_moves(self, row: int, col: int) -> list:
-        """Generates all board states where the pawn at [row,col] can move to"""
+        """Generates all boards where the pawn at [row,col] can move to"""
 
         up = (1, 0)
         down = (-1, 0)
@@ -193,3 +193,50 @@ class Board:
             return 0
         else:
             return len(self.pawn_moves(row, col))
+
+
+class GameState:
+    def __init__(self, board: Board, playing_as: Player, turn_player: Player, turn=0):
+        self._board = board
+        self._playing_as = playing_as
+        self._turn_player = turn_player
+        self._turn = turn
+
+    @property
+    def board(self) -> Board:
+        return self._board
+
+    @property
+    def playing_as(self) -> Player:
+        return self._playing_as
+
+    @property
+    def turn_player(self) -> Player:
+        return self._turn_player
+
+    @property
+    def turn(self) -> int:
+        return self._turn
+
+    def next_moves(self):
+        moves = []
+        for row in range(1, BOARD_LENGTH):
+            for col in range(1, BOARD_LENGTH):
+                if self.turn_player.owns_pawn(self.board[row][col]):
+                    pawn_moves = self.board.pawn_moves(row, col)
+                    moves.extend(
+                        [
+                            GameState(
+                                move,
+                                self.playing_as,
+                                self.turn_player.complement(),
+                                turn=self.turn + 1,
+                            )
+                            for move in pawn_moves
+                        ]
+                    )
+
+        return moves
+
+    def is_end_state(self) -> bool:
+        return False
