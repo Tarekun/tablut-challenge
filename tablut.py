@@ -2,6 +2,10 @@ from enum import Enum
 
 
 BOARD_LENGTH = 9
+WHITE_PIECES = 9
+BLACK_PIECES = 16
+MAX_PAWN_MOVES = 16
+WHITE_BLACK_RATIO = WHITE_PIECES / BLACK_PIECES
 
 
 class Player(Enum):
@@ -124,6 +128,7 @@ class Board:
             for step in range(1, BOARD_LENGTH):
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
+                # TODO: refactor to a simpler valid_move?
                 if self.is_empty(moved_row, moved_col) and not self.is_camp(
                     moved_row, moved_col
                 ):
@@ -136,6 +141,55 @@ class Board:
                     moves.append(new_board_class)
 
                 else:
+                    # cont move there so the path is blocked, change direction
                     break
 
         return moves
+
+    def generate_all_moves(self, player: Player) -> list:
+        moves = []
+        for row in range(1, BOARD_LENGTH):
+            for col in range(1, BOARD_LENGTH):
+                if player.owns_pawn(self[row][col]):
+                    pawn_moves = self.pawn_moves(row, col)
+                    moves.extend(pawn_moves)
+
+        return moves
+
+    def piece_count(self, player: Player) -> int:
+        total = 0
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if player.owns_pawn(self[i][j]):
+                    total += 1
+
+        return total
+
+    def piece_count_ratio(self, player: Player) -> float:
+        if player.is_white():
+            return self.piece_count(player) / WHITE_PIECES
+        else:
+            return self.piece_count(player) / BLACK_PIECES
+
+    def moves_count(self, player: Player) -> int:
+        return len(self.generate_all_moves(player))
+
+    def moves_count_ratio(self, player: Player) -> float:
+        max_moves = (
+            MAX_PAWN_MOVES * BLACK_PIECES
+            if player.is_black()
+            else MAX_PAWN_MOVES * WHITE_PIECES
+        )
+        return self.moves_count(player) / max_moves
+
+    def king_moves(self) -> int:
+        row, col = None, None
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if self[i][j] == Tile.KING.value:
+                    row, col = i, j
+
+        if row is None or col is None:
+            return 0
+        else:
+            return len(self.pawn_moves(row, col))

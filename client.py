@@ -4,7 +4,7 @@ import struct
 import time
 from typing import Dict
 from tablut import Board, Player, Turn
-from agent import alpha_beta, heuristic, generate_all_moves, max_depth_criterion
+from agent import alpha_beta, heuristic, move_sequence, max_depth_criterion
 
 
 WHITE_PORT = 5800
@@ -33,7 +33,7 @@ def play_game(player: Player, name: str, ip: str):
 
     print(f"Connecting as player {player}...")
     port = WHITE_PORT if player.is_white() else BLACK_PORT
-    search = alpha_beta(heuristic, max_depth_criterion, generate_all_moves)
+    search = alpha_beta(heuristic, max_depth_criterion, move_sequence)
 
     try:
         client_socket = initialize_connection(name, ip, port)

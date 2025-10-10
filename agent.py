@@ -1,23 +1,44 @@
-from typing import Dict, Any, Callable
-from tablut import Board, Player, BOARD_LENGTH
+import random
+import statistics
+from typing import Any, Callable
+from tablut import Board, Player, MAX_PAWN_MOVES, WHITE_PIECES, BLACK_PIECES
+from utils import rescale
 
 
-def heuristic(state: Board) -> float:
-    return 0.0
+def heuristic(state: Board, playing_as: Player) -> float:
+    black_piece_count = state.piece_count(Player.BLACK) / BLACK_PIECES
+    black_move_count = state.moves_count_ratio(Player.BLACK)
+    white_piece_count = state.piece_count_ratio(Player.WHITE) / WHITE_PIECES
+    white_move_count = state.moves_count_ratio(Player.WHITE)
+    king_moves = state.king_moves() / MAX_PAWN_MOVES
+
+    if playing_as == Player.WHITE:
+        white_piece_count = 1 - white_piece_count
+        white_move_count = 1 - white_move_count
+        king_moves = 1 - king_moves
+    else:
+        black_piece_count = 1 - black_piece_count
+        black_move_count = 1 - black_move_count
+
+    heuristics = [
+        white_move_count,
+        white_piece_count,
+        king_moves,
+        black_move_count,
+        black_piece_count,
+    ]
+    heuristics = [rescale((0, 1), (-1, 1), h) for h in heuristics]
+
+    return statistics.mean(heuristics)
 
 
 def max_depth_criterion(state: Board, depth: int) -> bool:
     return depth > 10
 
 
-def generate_all_moves(state: Board, player: Player) -> list:
-    moves = []
-    for row in range(1, BOARD_LENGTH):
-        for col in range(1, BOARD_LENGTH):
-            if player.owns_pawn(state[row][col]):
-                pawn_moves = state.pawn_moves(row, col)
-                moves.extend(pawn_moves)
-
+def move_sequence(state: Board, player: Player) -> list:
+    moves = state.generate_all_moves(player)
+    random.shuffle(moves)
     return moves
 
 
