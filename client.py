@@ -14,27 +14,21 @@ BLACK_PORT = 5801
 def play_turn(
     client_socket: socket.socket,
     playing_as: Player,
-    search_algorithm: Callable[[GameState], GameState | None],
+    search_algorithm: Callable[[GameState], GameState],
 ) -> bool:
     """Plays one turn of the game. Returns True if the game is over, False otherwise"""
-    print("pre read string")
     state_json = _read_string_from_stream(client_socket)
-    print("post read string")
     board, turn = parse_state(state_json)
-    mock_action = f"""{{
-        "from": "e4",
-        "to": "f4",
-        "turn": "{playing_as.value}"
-    }}"""
 
     if turn.plays(playing_as):
         print(f"It's our turn ({playing_as}). Calculating move...")
         game_state = GameState(board, playing_as, playing_as)
+        print(f"current game state:\n{game_state}")
         print("RUNNINGG SEARCH")
         move = search_algorithm(game_state)
-        # TODO: encode the move and send it to the server
-        print("sending mock string")
-        _write_string_to_stream(client_socket, mock_action)
+        action = board.action_to(move.board)
+        print(f"sending action {action}")
+        _write_string_to_stream(client_socket, json.dumps(action))
         return False
 
     elif turn.game_finished():
@@ -55,21 +49,20 @@ def play_game(player: Player, name: str, ip: str):
     try:
         client_socket = initialize_connection(name, ip, port)
         while True:
-            print("Waiting for game state from server...")
-            try:
-                is_over = play_turn(client_socket, player, search)
-                if is_over:
-                    break
+            # try:
+            is_over = play_turn(client_socket, player, search)
+            if is_over:
+                break
 
-                # time.sleep(0.1)  # Small pause to prevent rapid looping/spam
-            except socket.timeout:
-                print(
-                    f"Timeout Error: Connection or read operation took longer than 60 seconds."
-                )
-                break
-            except Exception as e:
-                print(f"An unexpected error occurred: {e}")
-                break
+            # time.sleep(0.1)  # Small pause to prevent rapid looping/spam
+        # except socket.timeout:
+        #     print(
+        #         f"Timeout Error: Connection or read operation took longer than 60 seconds."
+        #     )
+        #     break
+        # except Exception as e:
+        #     print(f"An unexpected error occurred: {e}")
+        #     break
 
     finally:
         if "client_socket" in locals():
@@ -82,7 +75,7 @@ def parse_state(json_string: str) -> tuple[Board, Turn]:
     """Parses the JSON string of the game state provided by the server"""
 
     state = json.loads(json_string)
-    print(f"parsed state is {state}")
+    # print(f"parsed state is {state}")
     turn = None
     for member in Turn:
         if member.value == state["turn"]:
