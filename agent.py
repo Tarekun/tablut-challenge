@@ -34,13 +34,15 @@ def heuristic(state: GameState) -> float:  # [-1, 1]
 
 
 def max_depth_criterion(state: GameState, depth: int) -> bool:
-    return depth > 10 or state.is_end_state()
+    return depth > 2 or state.is_end_state()
 
 
 def move_sequence(state: GameState) -> list:
     moves = state.next_moves()
+    print(f"generated {len(moves)} moves")
     random.shuffle(moves)
-    return moves
+    # moves.sort(key=lambda move: heuristic(move), reverse=True)
+    return moves[:10]
 
 
 def alpha_beta(
@@ -49,44 +51,46 @@ def alpha_beta(
     move_sequence: Callable[[GameState], list[GameState]],
 ):
     # TODO fix this list | None
-    def max_value(state, alpha, beta, depth) -> tuple[GameState | None, float]:
+    def max_value(state, alpha, beta, depth) -> tuple[GameState, float]:
         if stop_criterion(state, depth):
             # probabile va messa una vera valutazione qua, specie se finise il gioco
             return (state, heuristic(state))
 
         local_best = float("-inf")
         best_move = None
+        print(" " * depth, end="")
         for move in move_sequence(state):
             (_, value) = min_value(move, alpha, beta, depth + 1)
             if value > local_best:
                 local_best = value
                 best_move = move
             if local_best >= beta:
-                return (best_move, local_best)
+                return (best_move, local_best)  # type: ignore
             alpha = max(alpha, local_best)
 
-        return (best_move, local_best)
+        return (best_move, local_best)  # type: ignore
 
     # TODO fix this list | None
-    def min_value(state, alpha, beta, depth) -> tuple[GameState | None, float]:
+    def min_value(state, alpha, beta, depth) -> tuple[GameState, float]:
         if stop_criterion(state, depth):
             # probabile va messa una vera valutazione qua, specie se finise il gioco
             return (state, heuristic(state))
 
         local_best = float("inf")
         best_move = None
+        print(" " * depth, end="")
         for move in move_sequence(state):
             (_, value) = max_value(move, alpha, beta, depth + 1)
             if value < local_best:
                 local_best = value
                 best_move = move
             if local_best <= alpha:
-                return (best_move, local_best)
+                return (best_move, local_best)  # type: ignore
             beta = min(beta, local_best)
 
-        return (best_move, local_best)
+        return (best_move, local_best)  # type: ignore
 
-    def search_algorithm(state, player: Player):
+    def search_algorithm(state: GameState) -> GameState:
         (best_move, _) = max_value(state, float("-inf"), float("inf"), 0)
         return best_move
 

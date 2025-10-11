@@ -1,4 +1,5 @@
 from enum import Enum
+import copy
 
 
 BOARD_LENGTH = 9
@@ -6,17 +7,24 @@ WHITE_PIECES = 9
 BLACK_PIECES = 16
 MAX_PAWN_MOVES = 16
 WHITE_BLACK_RATIO = WHITE_PIECES / BLACK_PIECES
+cols_letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+
+
+def string_coordinates(row: int, col: int) -> str:
+    """Converts tile coordinates from 0-index (row,col) to server internal letter/digit system"""
+    print(f"converting coordinates ({row}, {col})")
+    return f"{cols_letters[col]}{row+1}"
 
 
 class Player(Enum):
-    WHITE = "W"
-    BLACK = "B"
+    WHITE = "WHITE"
+    BLACK = "BLACK"
 
     def is_white(self) -> bool:
-        return self.value == "W"
+        return self.value == Player.WHITE.value
 
     def is_black(self) -> bool:
-        return self.value == "B"
+        return self.value == Player.BLACK.value
 
     def complement(self):
         if self == Player.BLACK:
@@ -43,6 +51,8 @@ class Turn(Enum):
 
     def plays(self, player: Player) -> bool:
         """Returns True if the given player is playing this turn, False otherwise"""
+        print(self.value)
+        print(player.value)
         return self.value == player.value
 
     def game_finished(self):
@@ -60,6 +70,55 @@ class Tile(Enum):
 class Board:
     def __init__(self, board: list[list[str]]):
         self.board: list[list[str]] = board
+
+    def __str__(self) -> str:
+        string = ""
+        for row in range(BOARD_LENGTH):
+            for col in range(BOARD_LENGTH):
+                string += (
+                    "░"
+                    if self.board[row][col] == Tile.EMPTY.value
+                    else self.board[row][col][0:1]
+                )
+            string += "\n"
+        return string
+
+    def action_to(self, other) -> dict:  # type: ignore
+        print("starting board difference")
+        print(self)
+        print("target board difference")
+        print(other)
+        differences = []
+        for row in range(BOARD_LENGTH):
+            for col in range(BOARD_LENGTH):
+                if self[row][col] != other[row][col]:
+                    differences.append({"row": row, "col": col})
+
+        if len(differences) != 2:
+            raise ValueError(
+                f"This board and argument board have {len(differences)} different tiles so no action can take from one to another"
+            )
+
+        # take first and second different tiles
+        first = differences[0]
+        second = differences[1]
+
+        print(string_coordinates(first["row"], first["col"]))
+        print(self[first["row"]][first["col"]])
+        print(Tile.EMPTY.value)
+
+        if other[first["row"]][first["col"]] == Tile.EMPTY.value:
+            return {
+                "from": string_coordinates(first["row"], first["col"]),
+                "to": string_coordinates(second["row"], second["col"]),
+                "turn": self[second["row"]][second["col"]],
+            }
+        else:
+            return {
+                "from": string_coordinates(second["row"], second["col"]),
+                "to": string_coordinates(first["row"], first["col"]),
+                "turn": self[first["row"]][first["col"]],
+            }
 
     def at(self, row: int, col: int):
         """Returns the tile at [row,col]"""
@@ -129,15 +188,19 @@ class Board:
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
                 # TODO: refactor to a simpler valid_move?
-                if self.is_empty(moved_row, moved_col) and not self.is_camp(
-                    moved_row, moved_col
+                # TODO: pawns in the middle of the camp cant move now
+                if (
+                    self.is_empty(moved_row, moved_col)
+                    and not self.is_camp(moved_row, moved_col)
+                    and 0 <= moved_row < BOARD_LENGTH
+                    and 0 <= moved_col < BOARD_LENGTH
                 ):
-                    new_board = self.board.copy()
+                    new_board = copy.deepcopy(self.board)
                     new_board[row][col] = Tile.EMPTY.value
                     new_board[moved_row][moved_col] = pawn
                     new_board_class = Board(new_board)
                     # TODO: is this really needed or does the server handle it?
-                    new_board_class.solve_captures()
+                    # new_board_class.solve_captures()
                     moves.append(new_board_class)
 
                 else:
@@ -148,8 +211,8 @@ class Board:
 
     def generate_all_moves(self, player: Player) -> list:
         moves = []
-        for row in range(1, BOARD_LENGTH):
-            for col in range(1, BOARD_LENGTH):
+        for row in range(BOARD_LENGTH):
+            for col in range(BOARD_LENGTH):
                 if player.owns_pawn(self[row][col]):
                     pawn_moves = self.pawn_moves(row, col)
                     moves.extend(pawn_moves)
@@ -202,6 +265,10 @@ class GameState:
         self._turn_player = turn_player
         self._turn = turn
 
+    def __str__(self) -> str:
+        header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
+        return f"{header}\n{self.board}"
+
     @property
     def board(self) -> Board:
         return self._board
@@ -220,8 +287,8 @@ class GameState:
 
     def next_moves(self):
         moves = []
-        for row in range(1, BOARD_LENGTH):
-            for col in range(1, BOARD_LENGTH):
+        for row in range(BOARD_LENGTH):
+            for col in range(BOARD_LENGTH):
                 if self.turn_player.owns_pawn(self.board[row][col]):
                     pawn_moves = self.board.pawn_moves(row, col)
                     moves.extend(
