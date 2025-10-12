@@ -1,4 +1,5 @@
 import sys
+from agent import alpha_beta, heuristic, max_depth_criterion, move_sequence
 from client import play_game
 from tablut import Player
 
@@ -18,4 +19,5 @@ else:
     print("Invalid player. Must be either 'white' or 'black'.")
     sys.exit(1)
 
-play_game(player, "MyPythonBot", server_ip)
+search = alpha_beta(heuristic, max_depth_criterion, move_sequence)
+play_game(player, "MyPythonBot", server_ip, search)

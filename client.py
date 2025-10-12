@@ -15,85 +15,92 @@ def play_turn(
     client_socket: socket.socket,
     playing_as: Player,
     search_algorithm: Callable[[GameState], GameState],
-) -> bool:
+) -> tuple[int | None, GameState]:
     """Plays one turn of the game. Returns True if the game is over, False otherwise"""
     state_json = _read_string_from_stream(client_socket)
-    board, turn = parse_state(state_json)
+    game_state, turn = parse_state(state_json, playing_as)
 
     if turn.plays(playing_as):
         print(f"It's our turn ({playing_as}). Calculating move...")
-        game_state = GameState(board, playing_as, playing_as)
-        print(f"current game state:\n{game_state}")
-        print("RUNNINGG SEARCH")
+        # print(f"current game state:\n{game_state}")
+        print("RUNNING SEARCH")
         move = search_algorithm(game_state)
-        action = board.action_to(move.board)
+        action = game_state.board.action_to(move.board)
         print(f"sending action {action}")
         _write_string_to_stream(client_socket, json.dumps(action))
-        return False
+        return (None, game_state)
 
-    elif turn.game_finished():
-        print(f"Game End Detected. Result: {turn}")
-        return True
+    elif turn.wins(playing_as):
+        print(f"Endgame, {playing_as} won! Yippie")
+        return (1, game_state)
+    elif turn.wins(playing_as.complement()):
+        print(f"Endgame, {playing_as} lost! Damn...")
+        return (-1, game_state)
+    elif turn == Turn.DRAW:
+        print(f"Endgame, it's a draw")
+        return (0, game_state)
+
     else:
         print(f"It's opponent's turn. Waiting for next state...")
-        return False
+        return (None, game_state)
 
 
-def play_game(player: Player, name: str, ip: str):
-    """Implements the client's connection and turn loop."""
+def play_game(
+    player: Player,
+    name: str,
+    ip: str,
+    search_algorithm: Callable[[GameState], GameState],
+    track: bool = False,
+) -> tuple[int, list[GameState]]:
+    """Implements the client's connection and gameplay loop."""
 
-    print(f"Connecting as player {player}...")
     port = WHITE_PORT if player.is_white() else BLACK_PORT
-    search = alpha_beta(heuristic, max_depth_criterion, move_sequence)
+    # search = alpha_beta(heuristic, max_depth_criterion, move_sequence)
+    tracked_states = []
 
     try:
         client_socket = initialize_connection(name, ip, port)
         while True:
-            # try:
-            is_over = play_turn(client_socket, player, search)
-            if is_over:
+            (outcome, analyzed_state) = play_turn(
+                client_socket, player, search_algorithm
+            )
+            if track:
+                tracked_states.append(analyzed_state)
+            if outcome is not None:
                 break
-
-            # time.sleep(0.1)  # Small pause to prevent rapid looping/spam
-        # except socket.timeout:
-        #     print(
-        #         f"Timeout Error: Connection or read operation took longer than 60 seconds."
-        #     )
-        #     break
-        # except Exception as e:
-        #     print(f"An unexpected error occurred: {e}")
-        #     break
 
     finally:
         if "client_socket" in locals():
             client_socket.close()
-        print("Client script terminated.")
+
+    print("Game loop finished.")
+    return (outcome, tracked_states)
 
 
 ########## HELPER FUNCTIONS
-def parse_state(json_string: str) -> tuple[Board, Turn]:
+def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
     """Parses the JSON string of the game state provided by the server"""
 
     state = json.loads(json_string)
-    # print(f"parsed state is {state}")
     turn = None
     for member in Turn:
         if member.value == state["turn"]:
             turn = member
     if turn is None:
         raise ValueError(
-            f"Received game state returned a `turn` value which couldn't be matched: {state}"
+            f"Received game state returned a `turn` value which couldn't be matched: {state["turn"]}"
         )
 
-    return Board(state["board"]), turn
+    turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
+    return (GameState(Board(state["board"]), playing_as, turn_player), turn)
 
 
 def initialize_connection(player_name: str, ip: str, port: int):
+    print(f"Connecting to {ip}:{port}")
     # 1. Connect to the server
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # client_socket.settimeout(TIMEOUT_SECONDS)
     client_socket.connect((ip, port))
-    print(f"Connected to {ip}:{port}")
 
     # 2. Send Player Name (Handshake)
     print(f"Sending player name: '{player_name}'")
@@ -103,9 +110,6 @@ def initialize_connection(player_name: str, ip: str, port: int):
     return client_socket
 
 
-# --- COMMUNICATION UTILITIES (Assuming 4-byte length prefix) ---
-# TODO: review these functions
-
 STRING_FORMAT = "utf-8"
 
 
@@ -113,9 +117,7 @@ def _read_n_bytes(sock: socket.socket, n: int) -> bytes:
     """Reads exactly `n` bytes from the socket"""
 
     data = b""
-    print(f"read n bytes with {sock} and {n}")
     while len(data) < n:
-        print("ciclo")
         chunk = sock.recv(n - len(data))
         if not chunk:
             # connection closed by peer
@@ -127,7 +129,6 @@ def _read_n_bytes(sock: socket.socket, n: int) -> bytes:
 def _read_string_from_stream(sock: socket.socket) -> str:
     # read 4 bytes to get the length of the message
     raw_len = _read_n_bytes(sock, 4)
-    print(struct.unpack(">I", raw_len))
     length = struct.unpack(">I", raw_len)[0]
     #   try this in case of problems
     #   raw_len = _read_n_bytes(sock, 2)  # java writeUTF with 2-byte length prefix
