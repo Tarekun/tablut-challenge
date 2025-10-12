@@ -1,5 +1,7 @@
 from enum import Enum
 import copy
+import numpy as np
+from torch import float32, Tensor, tensor
 
 
 BOARD_LENGTH = 9
@@ -12,13 +14,19 @@ cols_letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
 
 def string_coordinates(row: int, col: int) -> str:
     """Converts tile coordinates from 0-index (row,col) to server internal letter/digit system"""
-    print(f"converting coordinates ({row}, {col})")
     return f"{cols_letters[col]}{row+1}"
 
 
 class Player(Enum):
     WHITE = "WHITE"
     BLACK = "BLACK"
+
+    def to_tensor(self) -> Tensor:  # (1, 2), dtype=torch.float32
+        """Returns a (1,2) 1-hot-encoded tensor of the player"""
+        if self == Player.WHITE:
+            return tensor([[1, 0]], dtype=float32)
+        else:
+            return tensor([[0, 1]], dtype=float32)
 
     def is_white(self) -> bool:
         return self.value == Player.WHITE.value
@@ -45,15 +53,18 @@ class Player(Enum):
 class Turn(Enum):
     WHITE = "WHITE"
     BLACK = "BLACK"
-    WHITE_WINS = "WHITEWINS"
-    BLACK_WINS = "BLACKWINS"
+    WHITE_WINS = "WHITEWIN"
+    BLACK_WINS = "BLACKWIN"
     DRAW = "DRAW"
 
     def plays(self, player: Player) -> bool:
         """Returns True if the given player is playing this turn, False otherwise"""
-        print(self.value)
-        print(player.value)
         return self.value == player.value
+
+    def wins(self, player: Player) -> bool:
+        return (self == Turn.WHITE_WINS and player == Player.WHITE) or (
+            self == Turn.BLACK_WINS and player == Player.BLACK
+        )
 
     def game_finished(self):
         return self == Turn.WHITE_WINS or self == Turn.BLACK_WINS or self == Turn.DRAW
@@ -83,11 +94,27 @@ class Board:
             string += "\n"
         return string
 
+    def to_tensor(self) -> Tensor:
+        """Returns a (3,9,9) tensor representing the board state. First channel is for the King's position,
+        second channel encodes other white pawns and third channel is for black pawns"""
+
+        encoded = np.zeros((3, 9, 9), dtype=np.float32)
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                tile = self[i][j]
+                if tile == Tile.KING.value:
+                    encoded[0, i, j] = 1.0
+                elif tile == Tile.WHITE.value:
+                    encoded[1, i, j] = 1.0
+                elif tile == Tile.BLACK.value:
+                    encoded[2, i, j] = 1.0
+                else:
+                    # skip empty tiles
+                    pass
+
+        return tensor(encoded)
+
     def action_to(self, other) -> dict:  # type: ignore
-        print("starting board difference")
-        print(self)
-        print("target board difference")
-        print(other)
         differences = []
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
@@ -102,10 +129,6 @@ class Board:
         # take first and second different tiles
         first = differences[0]
         second = differences[1]
-
-        print(string_coordinates(first["row"], first["col"]))
-        print(self[first["row"]][first["col"]])
-        print(Tile.EMPTY.value)
 
         if other[first["row"]][first["col"]] == Tile.EMPTY.value:
             return {
@@ -268,6 +291,15 @@ class GameState:
     def __str__(self) -> str:
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
         return f"{header}\n{self.board}"
+
+    def to_tensor(self) -> tuple[Tensor, Tensor, Tensor]:
+        """Returns a tuple containing game state elements as tensor. First element is the board,
+        second is the 1-hot-encoding of we're playing as and third is the turn player"""
+        return (
+            self.board.to_tensor(),
+            self.playing_as.to_tensor(),
+            self.turn_player.to_tensor(),
+        )
 
     @property
     def board(self) -> Board:
