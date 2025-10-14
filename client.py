@@ -1,10 +1,8 @@
 import socket
 import json
 import struct
-import time
-from typing import Callable, Dict
+from typing import Callable
 from tablut import Board, GameState, Player, Turn
-from agent import alpha_beta, heuristic, move_sequence, max_depth_criterion
 
 
 WHITE_PORT = 5800

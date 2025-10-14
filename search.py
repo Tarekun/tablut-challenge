@@ -5,51 +5,35 @@ from tablut import GameState, Player, MAX_PAWN_MOVES, WHITE_PIECES, BLACK_PIECES
 from utils import rescale
 
 
-def heuristic(state: GameState) -> float:  # [-1, 1]
-    board = state.board
-    black_piece_count = board.piece_count(Player.BLACK) / BLACK_PIECES
-    black_move_count = board.moves_count_ratio(Player.BLACK)
-    white_piece_count = board.piece_count_ratio(Player.WHITE) / WHITE_PIECES
-    white_move_count = board.moves_count_ratio(Player.WHITE)
-    king_moves = board.king_moves() / MAX_PAWN_MOVES
-
-    if state.playing_as == Player.BLACK:
-        white_piece_count = 1 - white_piece_count
-        white_move_count = 1 - white_move_count
-        king_moves = 1 - king_moves
-    else:
-        black_piece_count = 1 - black_piece_count
-        black_move_count = 1 - black_move_count
-
-    heuristics = [
-        white_move_count,
-        white_piece_count,
-        king_moves,
-        black_move_count,
-        black_piece_count,
-    ]
-    heuristics = [rescale((0, 1), (-1, 1), h) for h in heuristics]
-
-    return statistics.mean(heuristics)
-
-
-def max_depth_criterion(state: GameState, depth: int) -> bool:
-    return depth > 2 or state.is_end_state()
-
-
-def move_sequence(state: GameState) -> list:
-    moves = state.next_moves()
-    print(f"generated {len(moves)} moves")
-    random.shuffle(moves)
-    # moves.sort(key=lambda move: heuristic(move), reverse=True)
-    return moves[:10]
-
-
 def alpha_beta(
     heuristic: Callable[[GameState], float],
     stop_criterion: Callable[[GameState, int], bool],
     move_sequence: Callable[[GameState], list[GameState]],
 ):
+    """
+    Minmax search algorithm with alpha/beta pruning.
+
+    Parameters
+    ----------
+    heuristic : GameState -> [-1, 1]
+        State estimation function that evaluates a GameState and returns a
+        float between -1 and 1, where positive values favor the maximizing player
+        and negative values favor the minimizing player.
+    stop_criterion : [GameState, int] -> bool
+        Boolean function that determines whether to stop search at a node.
+        Takes current GameState and current search depth as input and returns
+        True if search should stop (leaf node or depth limit reached).
+    move_sequence : GameState -> list[GameState]
+        Policy function that generates and orders possible moves from a given
+        GameState. Proper ordering is crucial for effective alpha-beta pruning.
+
+    Returns
+    -------
+    GameState -> GameState
+        Function that takes current GameState as input and returns the
+        optimal next GameState according to the minmax search with alpha-beta pruning.
+    """
+
     # TODO fix this list | None
     def max_value(state, alpha, beta, depth) -> tuple[GameState, float]:
         if stop_criterion(state, depth):
@@ -95,3 +79,24 @@ def alpha_beta(
         return best_move
 
     return search_algorithm
+
+
+def monte_carlo_tree_search(
+    heuristic: Callable[[GameState], float],
+    stop_criterion: Callable[[GameState, int], bool],
+    move_sequence: Callable[[GameState], list[GameState]],
+):
+    """
+    Monte Carlo Tree Search (MCTS) algorithm.
+
+    Parameters
+    ----------
+    TODO
+
+    Returns
+    -------
+    GameState -> GameState
+        Function that takes current GameState as input and returns the
+        optimal next GameState according to the minmax search with alpha-beta pruning.
+    """
+    pass
