@@ -1,10 +1,71 @@
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from collections import deque
-import random
-from tablut import BOARD_LENGTH, GameState
+from tablut import BOARD_LENGTH, GameState, Board, Player, Tile
+
+
+def embed_player(player: Player) -> Tensor:
+    """Returns a (1,2) 1-hot-encoded tensor of the player"""
+    if player == Player.WHITE:
+        return torch.tensor([[1, 0]], dtype=torch.float32)
+    else:
+        return torch.tensor([[0, 1]], dtype=torch.float32)
+
+
+def embed_board(board: Board) -> Tensor:
+    """Returns a (3,9,9) tensor representing the board state. First channel is for the King's position,
+    second channel encodes other white pawns and third channel is for black pawns"""
+
+    encoded = np.zeros((3, 9, 9), dtype=np.float32)
+    for i in range(BOARD_LENGTH):
+        for j in range(BOARD_LENGTH):
+            tile = board[i][j]
+            if tile == Tile.KING.value:
+                encoded[0, i, j] = 1.0
+            elif tile == Tile.WHITE.value:
+                encoded[1, i, j] = 1.0
+            elif tile == Tile.BLACK.value:
+                encoded[2, i, j] = 1.0
+            else:
+                # skip empty tiles
+                pass
+
+    return torch.tensor(encoded)
+
+
+def embed_game_state(
+    state: GameState,
+) -> tuple[Tensor, Tensor, Tensor]:
+    """Returns a tuple containing game state elements as tensor. First element is the board,
+    second is the 1-hot-encoding of we're playing as and third is the turn player"""
+    return (
+        embed_board(state.board),
+        embed_player(state.playing_as),
+        embed_player(state.turn_player),
+    )
+
+
+def embed_batch_states(
+    states: list[GameState],
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Batch a list of GameStates into tensors suitable for CNN input."""
+    boards = []
+    playing_as = []
+    turn_players = []
+
+    for s in states:
+        b, p, t = embed_game_state(s)
+        boards.append(b)
+        playing_as.append(p)
+        turn_players.append(t)
+
+    board_batch = torch.stack(boards)  # (N, C, H, W)
+    playing_as_batch = torch.cat(playing_as)  # (N, 2)
+    turn_players_batch = torch.cat(turn_players)  # (N, 2)
+
+    return board_batch, playing_as_batch, turn_players_batch
 
 
 class TablutNet(nn.Module):
@@ -40,32 +101,11 @@ class TablutNet(nn.Module):
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=0)
 
-    @staticmethod
-    def batch_to_tensor(
-        states: list[GameState],
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Batch a list of GameStates into tensors suitable for CNN input."""
-        boards = []
-        playing_as = []
-        turn_players = []
-
-        for s in states:
-            b, p, t = s.to_tensor()
-            boards.append(b)
-            playing_as.append(p)
-            turn_players.append(t)
-
-        board_batch = torch.stack(boards)  # (N, C, H, W)
-        playing_as_batch = torch.cat(playing_as)  # (N, 2)
-        turn_players_batch = torch.cat(turn_players)  # (N, 2)
-
-        return board_batch, playing_as_batch, turn_players_batch
-
     def forward(self, game_state: GameState | list[GameState]):
         if isinstance(game_state, list):
-            board, playing_as, turn_player = TablutNet.batch_to_tensor(game_state)
+            board, playing_as, turn_player = embed_batch_states(game_state)
         else:
-            board, playing_as, turn_player = game_state.to_tensor()
+            board, playing_as, turn_player = embed_game_state(game_state)
             # add batch dimension for consistency
             board = board.unsqueeze(0)
 
@@ -86,10 +126,10 @@ class TablutNet(nn.Module):
 
         value = self.tanh(self.value_head(x)).squeeze(-1)
         if not isinstance(game_state, list):
+            policy_logits = self.policy_head(x).squeeze(-1)
+            probs = self.softmax(policy_logits)
+
+            return value, probs
+        else:
             return value
             # return value.squeeze(0)
-
-        policy_logits = self.policy_head(x).squeeze(-1)
-        probs = self.softmax(policy_logits)
-
-        return value, probs
