@@ -14,7 +14,7 @@ def play_turn(
     playing_as: Player,
     search_algorithm: Callable[[GameState], GameState],
 ) -> tuple[int | None, GameState]:
-    """Plays one turn of the game. Returns True if the game is over, False otherwise"""
+    """Plays one turn of the game. Returns `True` if the game is over, `False` otherwise"""
     state_json = _read_string_from_stream(client_socket)
     game_state, turn = parse_state(state_json, playing_as)
 
@@ -69,6 +69,7 @@ def play_game(
 
     finally:
         if "client_socket" in locals():
+            # TODO: fix message "client_socket" is possibly unbound
             client_socket.close()
 
     print("Game loop finished.")
@@ -94,6 +95,9 @@ def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
 
 
 def initialize_connection(player_name: str, ip: str, port: int):
+    """Establishes connection to the game server at `ip`:`port` subscribing
+    to the game with name `player_name`"""
+
     print(f"Connecting to {ip}:{port}")
     # 1. Connect to the server
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -125,6 +129,8 @@ def _read_n_bytes(sock: socket.socket, n: int) -> bytes:
 
 
 def _read_string_from_stream(sock: socket.socket) -> str:
+    """Reads one full string message from the socket"""
+
     # read 4 bytes to get the length of the message
     raw_len = _read_n_bytes(sock, 4)
     length = struct.unpack(">I", raw_len)[0]

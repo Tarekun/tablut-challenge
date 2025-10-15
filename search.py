@@ -91,12 +91,22 @@ def monte_carlo_tree_search(
 
     Parameters
     ----------
-    TODO
+    heuristic : GameState -> [-1, 1]
+        State estimation function that evaluates a GameState and returns a
+        float between -1 and 1, where positive values favor the maximizing player
+        and negative values favor the minimizing player.
+    stop_criterion : [GameState, int] -> bool
+        Boolean function that determines whether to stop search at a node.
+        Takes current GameState and current search depth as input and returns
+        True if search should stop (leaf node or depth limit reached).
+    move_sequence : GameState -> list[GameState]
+        Policy function that generates and orders possible moves from a given
+        GameState. Proper ordering is crucial for effective alpha-beta pruning.
 
     Returns
     -------
     GameState -> GameState
         Function that takes current GameState as input and returns the
-        optimal next GameState according to the minmax search with alpha-beta pruning.
+        optimal next GameState according to the Monte Carlo Tree Search algorithm.
     """
     pass

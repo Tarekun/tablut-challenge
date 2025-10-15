@@ -8,13 +8,13 @@ from tablut import GameState, Player, BLACK_PIECES, WHITE_PIECES, MAX_PAWN_MOVES
 from utils import rescale
 
 
-# This model contains various functions that return a search strategy (ie a function with type
+# This file contains various functions that return a search strategy (ie a function with type
 # GameState -> GameState) that can be used as an argument to `client.play_game` to play one
-# game with that playstyle. Useful to sample different algorithms when selfplaying
+# game with that playstyle. Useful to sample different algorithms when playing with yourself
 
 # Most of the components of search algorithms (stopping criterions, action policies and state
-# heuristics) are defined to configurable and reusable so one can plug n play different combinations
-# of them with the same base search algorithm
+# heuristics) are defined to be configurable and reusable so one can plug n play different
+# combinations of them with the same base search algorithm
 
 
 ################### SEARCH STRATEGIES
@@ -76,6 +76,9 @@ def alpha_beta_full_model(model: TablutNet, top_p: float, max_depth: int):
 def model_value_maximization_search(
     model: TablutNet,
 ) -> Callable[[GameState], GameState]:
+    """Given `model` that outputs a value for each state given as input
+    selects the action that maximizes this value"""
+
     def maximize_heuristic(state: GameState) -> GameState:
         best_value = float("-inf")
         best_move = None

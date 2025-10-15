@@ -1,13 +1,25 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-from collections import deque
 import random
 from tablut import BOARD_LENGTH, GameState
 
 
+# TODO: should move here the to_tensor function probably
+
+
 class TablutNet(nn.Module):
+    """Tablut value/policy network. It is implemented as a CNN that feeds its
+    featmaps to 2 different linear layer heads: one computes a value in [-1,1]
+    estimating if the turn player is going to win from this position, the other
+    outputs a probability distribution over the input states.
+
+    Turn player and who we are playing as is fed to the network as 2-dimensional
+    1-hot-encoded vectors.
+
+    `forward` method supports both single state evaluation (policy is P=1) and
+    multistate evaluation + probability distribution"""
+
     def __init__(self, in_channels: int = 3):
         super().__init__()
 

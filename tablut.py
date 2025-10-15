@@ -29,12 +29,15 @@ class Player(Enum):
             return tensor([[0, 1]], dtype=float32)
 
     def is_white(self) -> bool:
+        """Returns True if player is WHITE, False otherwise"""
         return self.value == Player.WHITE.value
 
     def is_black(self) -> bool:
+        """Returns True if player is BLACK, False otherwise"""
         return self.value == Player.BLACK.value
 
     def complement(self):
+        """Returns the complementary player (WHITE <-> BLACK)"""
         if self == Player.BLACK:
             return Player.WHITE
         else:
@@ -62,11 +65,13 @@ class Turn(Enum):
         return self.value == player.value
 
     def wins(self, player: Player) -> bool:
+        """Returns True if the given player has won this turn, False otherwise"""
         return (self == Turn.WHITE_WINS and player == Player.WHITE) or (
             self == Turn.BLACK_WINS and player == Player.BLACK
         )
 
     def game_finished(self):
+        """Returns True if the game has finished (a player has won or it's a draw), False otherwise"""
         return self == Turn.WHITE_WINS or self == Turn.BLACK_WINS or self == Turn.DRAW
 
 
@@ -97,7 +102,6 @@ class Board:
     def to_tensor(self) -> Tensor:
         """Returns a (3,9,9) tensor representing the board state. First channel is for the King's position,
         second channel encodes other white pawns and third channel is for black pawns"""
-
         encoded = np.zeros((3, 9, 9), dtype=np.float32)
         for i in range(BOARD_LENGTH):
             for j in range(BOARD_LENGTH):
@@ -115,6 +119,7 @@ class Board:
         return tensor(encoded)
 
     def action_to(self, other) -> dict:  # type: ignore
+        """Returns the action (from, to) that transforms this board into the other board"""
         differences = []
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
@@ -160,6 +165,7 @@ class Board:
             return False
 
     def is_camp(self, row: int, col: int) -> bool:
+        """Returns True if the tile at [row,col] is a camp position, False otherwise"""
         return any(
             [
                 # horizontal camps
@@ -176,6 +182,7 @@ class Board:
         )
 
     def is_escape(self, row: int, col: int) -> bool:
+        """Returns True if the tile at [row,col] is an escape position, False otherwise"""
         return any(
             [
                 # horizontal escapes
@@ -195,7 +202,6 @@ class Board:
 
     def pawn_moves(self, row: int, col: int) -> list:
         """Generates all boards where the pawn at [row,col] can move to"""
-
         up = (1, 0)
         down = (-1, 0)
         left = (0, -1)
@@ -233,6 +239,7 @@ class Board:
         return moves
 
     def generate_all_moves(self, player: Player) -> list:
+        """Generates all possible moves for the given player"""
         moves = []
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
@@ -243,6 +250,7 @@ class Board:
         return moves
 
     def piece_count(self, player: Player) -> int:
+        """Returns the number of pieces owned by the given player on the board"""
         total = 0
         for i in range(BOARD_LENGTH):
             for j in range(BOARD_LENGTH):
@@ -252,15 +260,18 @@ class Board:
         return total
 
     def piece_count_ratio(self, player: Player) -> float:
+        """Returns the ratio of pieces owned by the given player to the total possible pieces"""
         if player.is_white():
             return self.piece_count(player) / WHITE_PIECES
         else:
             return self.piece_count(player) / BLACK_PIECES
 
     def moves_count(self, player: Player) -> int:
+        """Returns the number of possible moves for the given player"""
         return len(self.generate_all_moves(player))
 
     def moves_count_ratio(self, player: Player) -> float:
+        """Returns the ratio of possible moves for the given player to the maximum possible moves"""
         max_moves = (
             MAX_PAWN_MOVES * BLACK_PIECES
             if player.is_black()
@@ -269,6 +280,7 @@ class Board:
         return self.moves_count(player) / max_moves
 
     def king_moves(self) -> int:
+        """Returns the number of possible moves for the king piece"""
         row, col = None, None
         for i in range(BOARD_LENGTH):
             for j in range(BOARD_LENGTH):
@@ -283,12 +295,14 @@ class Board:
 
 class GameState:
     def __init__(self, board: Board, playing_as: Player, turn_player: Player, turn=0):
+        """Initializes a GameState with the given board, player information and turn number"""
         self._board = board
         self._playing_as = playing_as
         self._turn_player = turn_player
         self._turn = turn
 
     def __str__(self) -> str:
+        """Returns a string representation of the game state"""
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
         return f"{header}\n{self.board}"
 
@@ -318,6 +332,7 @@ class GameState:
         return self._turn
 
     def next_moves(self):
+        """Generates all possible next game states from this state"""
         moves = []
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
@@ -338,4 +353,6 @@ class GameState:
         return moves
 
     def is_end_state(self) -> bool:
+        """Returns True if this game state represents an end state (game over), False otherwise"""
+        # TODO: implement
         return False
