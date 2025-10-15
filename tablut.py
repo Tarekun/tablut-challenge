@@ -1,7 +1,6 @@
 from enum import Enum
 import copy
 import numpy as np
-from torch import float32, Tensor, tensor
 
 
 BOARD_LENGTH = 9
@@ -20,13 +19,6 @@ def string_coordinates(row: int, col: int) -> str:
 class Player(Enum):
     WHITE = "WHITE"
     BLACK = "BLACK"
-
-    def to_tensor(self) -> Tensor:  # (1, 2), dtype=torch.float32
-        """Returns a (1,2) 1-hot-encoded tensor of the player"""
-        if self == Player.WHITE:
-            return tensor([[1, 0]], dtype=float32)
-        else:
-            return tensor([[0, 1]], dtype=float32)
 
     def is_white(self) -> bool:
         return self.value == Player.WHITE.value
@@ -93,26 +85,6 @@ class Board:
                 )
             string += "\n"
         return string
-
-    def to_tensor(self) -> Tensor:
-        """Returns a (3,9,9) tensor representing the board state. First channel is for the King's position,
-        second channel encodes other white pawns and third channel is for black pawns"""
-
-        encoded = np.zeros((3, 9, 9), dtype=np.float32)
-        for i in range(BOARD_LENGTH):
-            for j in range(BOARD_LENGTH):
-                tile = self[i][j]
-                if tile == Tile.KING.value:
-                    encoded[0, i, j] = 1.0
-                elif tile == Tile.WHITE.value:
-                    encoded[1, i, j] = 1.0
-                elif tile == Tile.BLACK.value:
-                    encoded[2, i, j] = 1.0
-                else:
-                    # skip empty tiles
-                    pass
-
-        return tensor(encoded)
 
     def action_to(self, other) -> dict:  # type: ignore
         differences = []
@@ -291,15 +263,6 @@ class GameState:
     def __str__(self) -> str:
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
         return f"{header}\n{self.board}"
-
-    def to_tensor(self) -> tuple[Tensor, Tensor, Tensor]:
-        """Returns a tuple containing game state elements as tensor. First element is the board,
-        second is the 1-hot-encoding of we're playing as and third is the turn player"""
-        return (
-            self.board.to_tensor(),
-            self.playing_as.to_tensor(),
-            self.turn_player.to_tensor(),
-        )
 
     @property
     def board(self) -> Board:
