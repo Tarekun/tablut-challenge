@@ -33,7 +33,7 @@ def alpha_beta_basic(
 
 
 def alpha_beta_value_model(
-    model: TablutNet, max_depth: int
+    model: TablutNet, max_depth: int, branching: int
 ) -> Callable[[GameState], GameState]:
     """Minimax algorithm with alpha/beta cuts that uses `model` as a state estimator
     when reaching a node at `max_depth`"""
@@ -41,7 +41,7 @@ def alpha_beta_value_model(
     return alpha_beta(
         _network_value_heuristic(model),
         _max_depth_criterion(max_depth),
-        _random_fixed_actions(10),
+        _random_fixed_actions(branching),
     )
 
 
@@ -73,14 +73,14 @@ def alpha_beta_full_model(model: TablutNet, top_p: float, max_depth: int):
     )
 
 
-def model_value_maximization_search(
+def model_value_maximization(
     model: TablutNet,
 ) -> Callable[[GameState], GameState]:
-    def maximize_heuristic(state: GameState) -> GameState:
-        best_value = float("-inf")
-        best_move = None
-        moves: list[GameState] = state.next_moves()
+    """Model heuristic maximization search that given a state returns the action
+    that maximizes the heuristic value"""
 
+    def maximize_heuristic(state: GameState) -> GameState:
+        moves = state.next_moves()
         with torch.no_grad():
             (values, probs) = model(moves)  # shape: (N,2)
 
@@ -88,10 +88,27 @@ def model_value_maximization_search(
         best_idx = int(torch.argmax(values).item())
         best_value = values[best_idx].item()
 
-        print(f"best value found was: {best_value}")
         return moves[best_idx]
 
     return maximize_heuristic
+
+
+def model_greedy_sampling(model: TablutNet):
+    """Greedy sampling model search that given a state returns the action with the
+    highest probability according to the policy head of the network"""
+
+    def implementation(state: GameState):
+        moves = state.next_moves()
+        with torch.no_grad():
+            (values, probs) = model(moves)  # shape: (N,2)
+
+        # find best move index
+        best_idx = int(torch.argmax(probs).item())
+        best_value = probs[best_idx].item()
+
+        return moves[best_idx]
+
+    return implementation
 
 
 ################### SEARCH STRATEGIES
@@ -130,7 +147,6 @@ def _network_value_heuristic(model: TablutNet):
     def implementation(state: GameState) -> float:
         with torch.no_grad():
             value = model(state)  # shape: (N,2)
-            print(f"computed value is: {value}")
             return value
 
     return implementation
