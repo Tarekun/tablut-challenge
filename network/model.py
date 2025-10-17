@@ -125,7 +125,7 @@ class TablutNet(nn.Module):
         x = F.relu(self.fc(x))
 
         value = self.tanh(self.value_head(x)).squeeze(-1)
-        if not isinstance(game_state, list):
+        if isinstance(game_state, list):
             policy_logits = self.policy_head(x).squeeze(-1)
             probs = self.softmax(policy_logits)
 

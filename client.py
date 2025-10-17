@@ -13,8 +13,10 @@ def play_turn(
     client_socket: socket.socket,
     playing_as: Player,
     search_algorithm: Callable[[GameState], GameState],
-) -> tuple[int | None, GameState]:
-    """Plays one turn of the game. Returns True if the game is over, False otherwise"""
+) -> tuple[int | None, GameState | None]:
+    """Plays one turn of the game. Returns a tuple containig a int | None in the first element
+    valued with the game's outcome iff this was the last turn, the GameState analized if it was
+    our turn"""
     state_json = _read_string_from_stream(client_socket)
     game_state, turn = parse_state(state_json, playing_as)
     print(f"current game state:\n{game_state}")
@@ -39,7 +41,7 @@ def play_turn(
 
     else:
         print(f"It's opponent's turn. Waiting for next state...")
-        return (None, game_state)
+        return (None, None)
 
 
 def play_game(
@@ -61,7 +63,7 @@ def play_game(
             (outcome, analyzed_state) = play_turn(
                 client_socket, player, search_algorithm
             )
-            if track:
+            if track and analyzed_state is not None:
                 tracked_states.append(analyzed_state)
             if outcome is not None:
                 break
