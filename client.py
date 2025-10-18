@@ -76,8 +76,11 @@ def play_game(
 
 
 ########## HELPER FUNCTIONS
-def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
-    """Parses the JSON string of the game state provided by the server"""
+def parse_state(
+    json_string: str, playing_as: Player | None = None
+) -> tuple[GameState, Turn]:
+    """Parses the JSON string of the game state provided by the server. playing_as is optional
+    and if left unspecified will be set to the turn player"""
 
     state = json.loads(json_string)
     turn = None
@@ -89,8 +92,10 @@ def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
             f"Received game state returned a `turn` value which couldn't be matched: {state['turn']}"
         )
 
+    # TODO: review this
     turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
-    return (GameState(Board(state["board"]), playing_as, turn_player), turn)
+    playing_as = playing_as if playing_as is not None else turn_player
+    return (GameState(Board(state["board"]), playing_as, turn), turn)
 
 
 def initialize_connection(player_name: str, ip: str, port: int):
