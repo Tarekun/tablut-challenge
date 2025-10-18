@@ -61,6 +61,13 @@ class Turn(Enum):
     def game_finished(self):
         return self == Turn.WHITE_WINS or self == Turn.BLACK_WINS or self == Turn.DRAW
 
+    def complement(self):
+        if self == Turn.WHITE:
+            return Turn.BLACK
+        # TODO: should check this isnt a final state and raise?
+        else:
+            return Turn.WHITE
+
 
 class Tile(Enum):
     EMPTY = "EMPTY"
@@ -254,11 +261,12 @@ class Board:
 
 
 class GameState:
-    def __init__(self, board: Board, playing_as: Player, turn_player: Player, turn=0):
+    def __init__(self, board: Board, playing_as: Player, turn: Turn, turn_num=0):
         self._board = board
         self._playing_as = playing_as
-        self._turn_player = turn_player
+        self._turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
         self._turn = turn
+        self._turn_num = turn_num
 
     def __str__(self) -> str:
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
@@ -277,8 +285,12 @@ class GameState:
         return self._turn_player
 
     @property
-    def turn(self) -> int:
+    def turn(self) -> Turn:
         return self._turn
+
+    @property
+    def turn_num(self) -> int:
+        return self._turn_num
 
     def next_moves(self):
         moves = []
@@ -291,8 +303,8 @@ class GameState:
                             GameState(
                                 move,
                                 self.playing_as,
-                                self.turn_player.complement(),
-                                turn=self.turn + 1,
+                                self.turn.complement(),
+                                turn_num=self.turn_num + 1,
                             )
                             for move in pawn_moves
                         ]
@@ -301,4 +313,5 @@ class GameState:
         return moves
 
     def is_end_state(self) -> bool:
+        # TODO: implementare
         return False

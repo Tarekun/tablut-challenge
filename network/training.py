@@ -12,7 +12,9 @@ from tablut import Player
 from tablut import BOARD_LENGTH, GameState
 from profiles import *
 from network.model import TablutNet
+from network.training_db import persist_self_play_run
 import threading
+import datetime
 
 
 def train(
@@ -100,8 +102,12 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
     and the picked action at each state, together with the game result (±1) from the
     perspective of the turn player"""
 
-    def simulate_one_game(game_history: list):
+    def simulate_one_game():
         player = random.choice([Player.WHITE, Player.BLACK])
+        player_search_name, player_search = _random_search_profile(model)
+        opp_search_name, opp_search = _random_search_profile(model)
+        experiences: list[tuple[GameState, int]] = []
+        start_time = datetime.datetime.now()
 
         print("Starting server...", end=" ")
         server = subprocess.Popen(
@@ -122,7 +128,7 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
                 player.complement(),
                 "opponent",
                 "localhost",
-                _random_opponent_search(model),
+                opp_search,
                 opp_results,
             ),
         )
@@ -131,31 +137,43 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
         print("Done")
 
         outcome, game_states = play_game(
-            player, "Trainee", "localhost", search, track=True
+            player, "Trainee", "localhost", player_search, track=True
         )
-        game_history.extend(_prepare_game_state_data(outcome, game_states, player))
+        end_time = datetime.datetime.now()
+        experiences.extend(_prepare_game_state_data(outcome, game_states, player))
         opp_thread.join()
         opp_outcome = opp_results["outcome"]
         opp_game_states = opp_results["game_states"]
-        game_history.extend(
+        experiences.extend(
             _prepare_game_state_data(opp_outcome, opp_game_states, player.complement())
         )
 
-        return {
+        analytics = {
             "trainee_player": player.value,
-            "trainee_strategy": None,
+            "trainee_strategy": player_search_name,
+            "trainee_outcome": outcome,
             "opp_player": player.complement().value,
-            "opp_strategy": None,
+            "opp_strategy": opp_search_name,
+            "opp_outcome": opp_outcome,
+            "start_time": start_time,
+            "end_time": end_time,
+            "duration_s": (end_time - start_time).total_seconds(),
         }
+        return analytics, experiences
 
     game_history = []
+    analytics = []
     total_duration = 0
     search = model_value_maximization(model)
 
+    # TODO: run games in parallel
     for _ in range(num_games):
         start_time = time.time()
-        simulate_one_game(game_history)
+        analytics_record, experiences = simulate_one_game()
         end_time = time.time()
+
+        analytics.append(analytics_record)
+        game_history.extend(experiences)
         duration = end_time - start_time
         total_duration += duration
         print(f"Completed game simulation in {duration:.2f} seconds")
@@ -165,11 +183,14 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
         f"All {num_games} games completedwith an average of {avg_duration} seconds per game. Collected a total of {len(game_history)} experiences"
     )
 
+    persist_self_play_run(game_history, analytics)
     return game_history
 
 
 #################### HELPER FUNCTIONS
-def _random_opponent_search(model: TablutNet) -> Callable[[GameState], GameState]:
+def _random_search_profile(
+    model: TablutNet,
+) -> tuple[str, Callable[[GameState], GameState]]:
     default_depth = 4
     default_branching = 12
     searches = [
@@ -177,7 +198,7 @@ def _random_opponent_search(model: TablutNet) -> Callable[[GameState], GameState
         # alpha_beta_value_model(model, default_depth, default_branching),
         # alpha_beta_policy_model(model, 0.5, default_depth),
         # alpha_beta_full_model(model, 0.5, default_depth),
-        model_value_maximization(model),
+        ("model_value_maximization", model_value_maximization(model)),
         # model_greedy_sampling(model),
     ]
     return random.choice(searches)
