@@ -26,7 +26,7 @@ def run_self_play_game(model, num_games=1) -> list:
     for _ in range(num_games):
         player = Player.WHITE
 
-        print("Starting server...", end=" ")
+        #print("Starting server...", end=" ")
         server = subprocess.Popen(
             ["ant", "server", "WHITE", "localhost"],
             cwd="C:\\Users\\danie\\codice\\uni\\TablutCompetition\\Tablut",
@@ -35,9 +35,9 @@ def run_self_play_game(model, num_games=1) -> list:
             shell=True,
         )
         time.sleep(1)
-        print("Done")
+        #print("Done")
 
-        print("Starting opponent...", end=" ")
+        #print("Starting opponent...", end=" ")
         opponent = subprocess.Popen(
             ["python", "main.py", player.complement().value, "localhost"],
             cwd="C:\\Users\\danie\\codice\\uni\\tablut-challenge",
@@ -46,13 +46,13 @@ def run_self_play_game(model, num_games=1) -> list:
             shell=True,
         )
         time.sleep(1)
-        print("Done")
+        #print("Done")
 
         outcome, game_states = play_game(
             player, "Trainee", "localhost", search, track=True
         )
         for state in game_states:
-            print(f"processing:\n{state}\n")
+            #print(f"processing:\n{state}\n")
             outcome = outcome if state.turn_player == player else -1 * outcome
             game_history.append((state, outcome))
 
@@ -117,8 +117,8 @@ def train(
     `batch_size` actions from the experience buffer and performs gradient optimization on those samples
     """
     for iteration in range(iterations):
-        print(f"Starting Iteration {iteration + 1}/{iterations}")
-        print(f"\tRunning {games} self-play games...")
+        #print(f"Starting Iteration {iteration + 1}/{iterations}")
+        #print(f"\tRunning {games} self-play games...")
         experience_buffer = run_self_play_game(model, num_games=games)
 
         print(
@@ -130,7 +130,7 @@ def train(
             if loss is not None:
                 total_loss += loss
         avg_loss = total_loss / train_steps if train_steps > 0 else 0
-        print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
+        #print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
 
         # Save model checkpoint periodically
         if (iteration + 1) % 100 == 0:
@@ -138,7 +138,7 @@ def train(
                 model.state_dict(),
                 f"tablut_model_checkpoint_iter_{iteration + 1}.pth",
             )
-            print(f"  Model checkpoint saved at iteration {iteration + 1}")
+            #print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
 
 # --- Example Usage ---
@@ -158,5 +158,5 @@ if __name__ == "__main__":
         train_steps=100,
         batch_size=32,
     )
-    print("Model and trainer initialized.")
-    print("You need to implement the 'run_self_play_game' method with your game logic.")
+    #print("Model and trainer initialized.")
+    #print("You need to implement the 'run_self_play_game' method with your game logic.")

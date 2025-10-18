@@ -1,6 +1,6 @@
 import random
 import statistics
-from typing import Callable
+from typing import Callable, Tuple
 from tablut import GameState, Player, MAX_PAWN_MOVES, WHITE_PIECES, BLACK_PIECES
 from utils import rescale
 
