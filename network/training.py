@@ -1,15 +1,10 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import numpy as np
-from collections import deque
 import random
 import subprocess
 import time
 from client import play_game
 from tablut import Player
-from tablut import BOARD_LENGTH, GameState
+from tablut import GameState
 from profiles import *
 from network.model import TablutNet
 from network.training_db import persist_self_play_run
@@ -164,7 +159,6 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
     game_history = []
     analytics = []
     total_duration = 0
-    search = model_value_maximization(model)
 
     # TODO: run games in parallel
     for _ in range(num_games):
