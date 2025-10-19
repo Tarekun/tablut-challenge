@@ -293,142 +293,6 @@ class Board:
         else:
             return False
 
-    # def pawn_moves(self, row: int, col: int) -> Tuple[list, list]:
-    #     """Generates all boards where the pawn at [row,col] can move to"""
-
-    #     up = (1, 0)
-    #     down = (-1, 0)
-    #     left = (0, -1)
-    #     right = (0, 1)
-    #     moves: list[Board] = []
-    #     moves_caught: list[Board] = []
-    #     pawn = self.at(row, col)
-    #     if pawn == Tile.EMPTY.value:
-    #         raise ValueError(f"Tile at [{row},{col}] is empty and no pawn can be moved")
-
-    #     for direction in [up, down, left, right]:
-    #         row_change, col_change = direction
-    #         for step in range(1, BOARD_LENGTH):
-    #             moved_row = row + (step * row_change)
-    #             moved_col = col + (step * col_change)
-    #             # TODO: refactor to a simpler valid_move?
-
-    #             if (self.is_empty(moved_row, moved_col) and (self.camp_id(moved_row, moved_col) == self.camp_id(row, col)) and self.check_inside_board(moved_row, moved_col)):
-    #                 new_board = copy.deepcopy(self.board)
-    #                 new_board[row][col] = Tile.EMPTY.value
-    #                 new_board[moved_row][moved_col] = pawn
-    #                 new_board_class = Board(new_board)
-
-    #                 #CHECK CAUGHT
-    #                 caught_board = copy.deepcopy(new_board_class.board)
-    #                 check_row = moved_row + row_change
-    #                 check_col = moved_col + col_change
-    #                 if  new_board_class.check_inside_board(check_row, check_col):
-    #                     enemy_pawn = new_board_class.at(check_row, check_col)
-    #                     #PLAYING WHITE
-    #                     if  pawn == Tile.WHITE.value or pawn == Tile.KING.value:
-    #                         if enemy_pawn == Tile.BLACK.value:
-    #                             ally_row = check_row + row_change
-    #                             ally_col = check_col + col_change
-    #                             if new_board_class.check_inside_board(ally_row, ally_col):
-    #                                 ally_pawn = new_board_class.at(ally_row, ally_col)
-
-    #                                 if(ally_pawn == Tile.WHITE.value or 
-    #                                 ally_pawn == Tile.KING.value or
-    #                                 #(new_board_class.is_camp(ally_row, ally_col) and ally_pawn == Tile.EMPTY.value) or
-    #                                 new_board_class.is_throne(ally_row, ally_col)):
-                                        
-    #                                     caught_board[check_row][check_col] = Tile.EMPTY.value
-    #                     #PLAYING BLACK     
-    #                     elif pawn == Tile.BLACK.value:
-    #                         #ENEMY WHITE
-    #                         if enemy_pawn == Tile.WHITE.value:
-    #                             ally_row = check_row + row_change
-    #                             ally_col = check_col + col_change
-    #                             if new_board_class.check_inside_board(ally_row, ally_col):
-    #                                 ally_pawn = new_board_class.at(ally_row, ally_col)
-    #                                 if(
-    #                                     new_board_class.is_camp(ally_row, ally_col) or 
-    #                                     ally_pawn == Tile.BLACK.value or 
-    #                                     (ally_pawn == Tile.EMPTY.value and new_board_class.is_throne(ally_row, ally_col))
-    #                                 ):
-    #                                     caught_board[check_row][check_col] = Tile.EMPTY.value
-
-    #                         #ENEMY KING
-    #                         elif enemy_pawn == Tile.KING.value:
-    #                             for d in [up, down, left, right]:
-    #                                 row_step, col_step = d
-    #                                 ally_row = check_row + row_step
-    #                                 ally_col = check_col + col_step
-    #                                 if (ally_row, ally_col) != (moved_row, moved_col) and new_board_class.check_inside_board(ally_row, ally_col):
-    #                                     ally_pawn = new_board_class.at(ally_row, ally_col)
-    #                                     if ally_pawn == Tile.EMPTY.value or ally_pawn == Tile.WHITE.value:
-    #                                         break
-    #                                     # else:
-    #                                     #     caught_board[check_row][check_col] = Tile.EMPTY.value           
-
-    #                 caught_board_class = Board(caught_board)
-                    
-                        
-    #                 # TODO: is this really needed or does the server handle it?
-    #                 # new_board_class.solve_captures()
-    #                 moves.append(new_board_class)
-    #                 moves_caught.append(caught_board_class)
-
-    #             else:
-    #                 # cont move there so the path is blocked, change direction
-    #                 break
-
-    #     return moves, moves_caught
-    
-    # def check_inside_board(self, row, col):
-    #     if  0 <= row < BOARD_LENGTH and 0 <= col < BOARD_LENGTH:
-    #         return True
-    #     else:
-    #         return False
-
-                
-    
-
-    # def pawn_moves(self, row: int, col: int) -> list:
-    #     """Generates all boards where the pawn at [row,col] can move to"""
-    
-    #     up = (1, 0)
-    #     down = (-1, 0)
-    #     left = (0, -1)
-    #     right = (0, 1)
-    #     moves: list[Board] = []
-    #     pawn = self.at(row, col)
-    #     if pawn == Tile.EMPTY.value:
-    #         raise ValueError(f"Tile at [{row},{col}] is empty and no pawn can be moved")
-
-    #     for direction in [up, down, left, right]:
-    #         row_change, col_change = direction
-    #         for step in range(1, BOARD_LENGTH):
-    #             moved_row = row + (step * row_change)
-    #             moved_col = col + (step * col_change)
-    #             # TODO: refactor to a simpler valid_move?
-    #             # TODO: pawns in the middle of the camp cant move now
-    #             if (
-    #                 self.is_empty(moved_row, moved_col)
-    #                 and not self.is_camp(moved_row, moved_col)
-    #                 and 0 <= moved_row < BOARD_LENGTH
-    #                 and 0 <= moved_col < BOARD_LENGTH
-    #             ):
-    #                 new_board = copy.deepcopy(self.board)
-    #                 new_board[row][col] = Tile.EMPTY.value
-    #                 new_board[moved_row][moved_col] = pawn
-    #                 new_board_class = Board(new_board)
-    #                 # TODO: is this really needed or does the server handle it?
-    #                 # new_board_class.solve_captures()
-    #                 moves.append(new_board_class)
-
-    #             else:
-    #                 # cont move there so the path is blocked, change direction
-    #                 break
-
-    #     return moves
-
     def generate_all_moves(self, player: Player) -> list:
         moves = []
         for row in range(BOARD_LENGTH):
@@ -583,4 +447,30 @@ class GameState:
         return moves
 
     def is_end_state(self) -> bool:
+        up = (1, 0)
+        down = (-1, 0)
+        left = (0, -1)
+        right = (0, 1)
+        
+        board = Board(self._board.previous)
+        
+        for row in range(BOARD_LENGTH):
+            for col in range(BOARD_LENGTH):
+                if board.at(row, col) == Tile.KING.value:
+                    if board.is_escape(row, col):
+                        return True
+                    capture = 0
+                    for rd, cd in [up, down, left, right]:
+                        moved_row = row + rd
+                        moved_col = col + cd
+                        if(
+                            board.at(moved_row, moved_col) == Tile.EMPTY.value
+                            or board.at(moved_row, moved_col) == Tile.WHITE.value
+                        ):
+                            break
+                        else:
+                            capture += 1
+                    if capture == 4:
+                        return True
+                    
         return False
