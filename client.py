@@ -19,13 +19,11 @@ def play_turn(
     game_state, turn = parse_state(state_json, playing_as)
 
     if turn.plays(playing_as):
-        #print(f"It's our turn ({playing_as}). Calculating move...")
+        print(f"It's our turn ({playing_as}). Calculating move...")
         print(f"current game state:\n{game_state}")
-        #print("RUNNING SEARCH")
         move = search_algorithm(game_state)
         action = game_state.board.action_to(move.board)
         print(f"New State:\n{move}")
-        #print(f"sending action {action}")
         _write_string_to_stream(client_socket, json.dumps(action))
         return (None, game_state)
 
@@ -54,7 +52,6 @@ def play_game(
     """Implements the client's connection and gameplay loop."""
 
     port = WHITE_PORT if player.is_white() else BLACK_PORT
-    # search = alpha_beta(heuristic, max_depth_criterion, move_sequence)
     tracked_states = []
     client_socket = None
 
@@ -73,7 +70,6 @@ def play_game(
         if client_socket is not None:
             client_socket.close()
 
-    #print("Game loop finished.")
     return (outcome, tracked_states)
 
 
@@ -90,20 +86,19 @@ def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
         raise ValueError(
             f"Received game state returned a `turn` value which couldn't be matched: {state['turn']}"
         )
-    
+
     turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
     return (GameState(Board(state["board"]), playing_as, turn_player), turn)
 
 
 def initialize_connection(player_name: str, ip: str, port: int):
-    #print(f"Connecting to {ip}:{port}")
+    print(f"Connecting to {ip}:{port}")
     # 1. Connect to the server
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # client_socket.settimeout(TIMEOUT_SECONDS)
     client_socket.connect((ip, port))
 
     # 2. Send Player Name (Handshake)
-    #print(f"Sending player name: '{player_name}'")
     name_json = json.dumps(player_name)
     _write_string_to_stream(client_socket, name_json)
 

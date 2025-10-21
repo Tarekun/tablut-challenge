@@ -5,7 +5,7 @@ from tablut import Player
 
 
 if len(sys.argv) != 3:
-    #print("Usage: python main.py <player> <server ip>")
+    print("Usage: python main.py <player> <server ip>")
     sys.exit(1)
 
 player_input = sys.argv[1].lower()
@@ -16,8 +16,9 @@ if player_input == "white":
 elif player_input == "black":
     player = Player.BLACK
 else:
-    #print("Invalid player. Must be either 'white' or 'black'.")
-    sys.exit(1)
+    raise ValueError(
+        f"Invalid player. Must be either 'white' or 'black', not {player_input}."
+    )
 
 search = alpha_beta_basic(4, 30)
 play_game(player, "MyPythonBot", server_ip, search)

@@ -89,7 +89,7 @@ def model_value_maximization_search(
         best_idx = int(torch.argmax(values).item())
         best_value = values[best_idx].item()
 
-        #print(f"best value found was: {best_value}")
+        # print(f"best value found was: {best_value}")
         return moves[best_idx]
 
     return maximize_heuristic
@@ -104,11 +104,12 @@ def _handpicked_heuristics(state: GameState) -> float:  # [-1, 1]
     king_escapes = board.king_escapes()
     king_surr = board.king_surr()
 
+    # win/lose state available => return the outcome
     if king_escapes >= 2:
         return 1 if state.turn_player == Player.WHITE else -1
     if king_surr == 4:
         return 1 if state.turn_player == Player.BLACK else -1
-    
+
     black_piece_count = board.piece_count(Player.BLACK) / BLACK_PIECES
     black_move_count = board.moves_count_ratio(Player.BLACK)
     white_piece_count = board.piece_count_ratio(Player.WHITE) / WHITE_PIECES
@@ -127,18 +128,19 @@ def _handpicked_heuristics(state: GameState) -> float:  # [-1, 1]
         black_move_count = 1 - black_move_count
         king_surr = 1 - king_surr
 
-    heuristics = np.array([
-        white_move_count,
-        white_piece_count,
-        king_moves,
-        black_move_count,
-        black_piece_count,
-        king_escapes,
-        king_surr
-    ])
-
-    weights = np.array([0, 0, 0, 0, 0, 5, 0])
-
+    heuristics = np.array(
+        [
+            white_move_count,
+            white_piece_count,
+            king_moves,
+            black_move_count,
+            black_piece_count,
+            king_escapes,
+            king_surr,
+        ]
+    )
+    # king metrics 3 times important as other metrics
+    weights = np.array([1, 1, 1, 1, 1, 3, 3])
     heuristics = np.array([rescale((0, 1), (-1, 1), h) for h in heuristics])
 
     return float(np.average(heuristics, weights=weights))
@@ -148,7 +150,6 @@ def _network_value_heuristic(model: TablutNet):
     def implementation(state: GameState) -> float:
         with torch.no_grad():
             value = model(state)  # shape: (N,2)
-            #print(f"computed value is: {value}")
             return value
 
     return implementation
@@ -161,7 +162,6 @@ def _network_value_heuristic(model: TablutNet):
 def _random_fixed_actions(num: int):
     def implementation(state: GameState):
         moves = state.next_moves()
-        #print(f"generated {len(moves)} moves")
         random.shuffle(moves)
         # moves.sort(key=lambda move: heuristic(move), reverse=True)
         return moves[:num]

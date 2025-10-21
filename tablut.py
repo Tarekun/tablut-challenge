@@ -75,15 +75,13 @@ class Board:
     def __init__(self, board: list[list[str]]):
         self.board: list[list[str]] = board
         self._previous: list[list[str]] | None = None
-        # self.capture: Board | None = None
 
-    @property 
+    @property
     def previous(self):
         if self._previous is not None:
             return self._previous
-        else :
+        else:
             return self.board
-        
 
     def __str__(self) -> str:
         string = ""
@@ -158,7 +156,7 @@ class Board:
                 (col == 8 and row in (3, 4, 5)),
             ]
         )
-    
+
     def camp_id(self, row: int, col: int) -> str | None:
         if (row == 0 and col in (3, 4, 5)) or (row == 1 and col == 4):
             return "top"
@@ -170,7 +168,6 @@ class Board:
             return "right"
         return None
 
-    
     def is_throne(self, row: int, col: int) -> bool:
         return row == 4 and col == 4
 
@@ -186,68 +183,108 @@ class Board:
             ]
         )
 
+    def valid_move(
+        self, from_row: int, from_col: int, to_row: int, to_col: int
+    ) -> bool:
+        """Returns `True` iff the move from (from_row, from_col) to (to_row, to_col) is
+        a valid one in the current board"""
+        return (
+            self.is_empty(to_row, to_col)
+            and self.check_inside_board(to_row, to_col)
+            and (
+                # we stay inside the same camp
+                self.camp_id(to_row, to_col) == self.camp_id(from_row, from_col)
+                # OR we're targetting a non-camp tile
+                or self.is_camp(to_row, to_col) is None
+            )
+        )
+
     def solve_captures(self, row, col):
         """Updates the current board if captures can be made, by removing from the board
-        the captured pawn"""
-        #CHECK CAUGHT
+        the captured pawn. `row` and `col` refer to the tile the last pawn moved to"""
+
         up = (1, 0)
         down = (-1, 0)
         left = (0, -1)
         right = (0, 1)
-
         pawn = self.at(row, col)
+
+        def capture_available(pawn, enemy_pawn, ally_pawn):
+            # se gioca white
+            return (
+                (pawn == Tile.WHITE.value or pawn == Tile.KING.value)
+                and enemy_pawn == Tile.BLACK.value
+                and (
+                    ally_pawn == Tile.WHITE.value
+                    or ally_pawn == Tile.KING.value
+                    or self.is_throne(ally_row, ally_col)
+                    or self.is_camp(ally_row, ally_col)
+                )
+            )
 
         for rd, cd in [up, down, left, right]:
             check_row = row + rd
             check_col = col + cd
-            if  self.check_inside_board(check_row, check_col):
+            if self.check_inside_board(check_row, check_col):
                 enemy_pawn = self.at(check_row, check_col)
-                #PLAYING WHITE
-                if  pawn == Tile.WHITE.value or pawn == Tile.KING.value:
+                # PLAYING WHITE
+                if pawn == Tile.WHITE.value or pawn == Tile.KING.value:
                     if enemy_pawn == Tile.BLACK.value:
                         ally_row = check_row + rd
                         ally_col = check_col + cd
                         if self.check_inside_board(ally_row, ally_col):
                             ally_pawn = self.at(ally_row, ally_col)
 
-                            if(ally_pawn == Tile.WHITE.value or 
-                            ally_pawn == Tile.KING.value or
-                            #(new_board_class.is_camp(ally_row, ally_col) and ally_pawn == Tile.EMPTY.value) or
-                            self.is_throne(ally_row, ally_col)):
-                                
+                            # TODO; make this logic consistent
+                            if (
+                                ally_pawn == Tile.WHITE.value
+                                or ally_pawn == Tile.KING.value
+                                or
+                                # (new_board_class.is_camp(ally_row, ally_col) and ally_pawn == Tile.EMPTY.value) or
+                                self.is_throne(ally_row, ally_col)
+                            ):
+
                                 self._previous = copy.deepcopy(self.board)
                                 self.board[check_row][check_col] = Tile.EMPTY.value
 
-                #PLAYING BLACK     
+                # PLAYING BLACK
                 elif pawn == Tile.BLACK.value:
-                    #ENEMY WHITE
+                    # ENEMY WHITE
                     if enemy_pawn == Tile.WHITE.value:
                         ally_row = check_row + rd
                         ally_col = check_col + cd
                         if self.check_inside_board(ally_row, ally_col):
                             ally_pawn = self.at(ally_row, ally_col)
-                            if(
-                                self.is_camp(ally_row, ally_col) or 
-                                ally_pawn == Tile.BLACK.value or 
-                                (ally_pawn == Tile.EMPTY.value and self.is_throne(ally_row, ally_col))
+                            if (
+                                self.is_camp(ally_row, ally_col)
+                                or ally_pawn == Tile.BLACK.value
+                                or (
+                                    ally_pawn == Tile.EMPTY.value
+                                    and self.is_throne(ally_row, ally_col)
+                                )
                             ):
-                                
+
                                 self._previous = copy.deepcopy(self.board)
                                 self.board[check_row][check_col] = Tile.EMPTY.value
 
-                    #ENEMY KING
+                    # ENEMY KING
                     elif enemy_pawn == Tile.KING.value:
                         for row_step, col_step in [up, down, left, right]:
                             ally_row = check_row + row_step
                             ally_col = check_col + col_step
-                            if (ally_row, ally_col) != (row, col) and self.check_inside_board(ally_row, ally_col):
+                            if (ally_row, ally_col) != (
+                                row,
+                                col,
+                            ) and self.check_inside_board(ally_row, ally_col):
                                 ally_pawn = self.at(ally_row, ally_col)
-                                if ally_pawn == Tile.EMPTY.value or ally_pawn == Tile.WHITE.value:
+                                if (
+                                    ally_pawn == Tile.EMPTY.value
+                                    or ally_pawn == Tile.WHITE.value
+                                ):
                                     break
                                 # else:
                                 #     caught_board[check_row][check_col] = Tile.EMPTY.value
         return
-
 
     def pawn_moves(self, row: int, col: int) -> list:
         """Generates all boards where the pawn at [row,col] can move to"""
@@ -257,7 +294,6 @@ class Board:
         left = (0, -1)
         right = (0, 1)
         moves: list[Board] = []
-        moves_caught: list[Board] = []
         pawn = self.at(row, col)
         if pawn == Tile.EMPTY.value:
             raise ValueError(f"Tile at [{row},{col}] is empty and no pawn can be moved")
@@ -269,26 +305,22 @@ class Board:
                 moved_col = col + (step * col_change)
                 # TODO: refactor to a simpler valid_move?
 
-                if (
-                    self.is_empty(moved_row, moved_col) and 
-                    (self.camp_id(moved_row, moved_col) == self.camp_id(row, col)) and 
-                    self.check_inside_board(moved_row, moved_col)
-                ):
+                if self.valid_move(row, col, moved_row, moved_col):
                     new_board = copy.deepcopy(self.board)
                     new_board[row][col] = Tile.EMPTY.value
                     new_board[moved_row][moved_col] = pawn
-                    
+
                     new_board_class = Board(new_board)
                     new_board_class.solve_captures(moved_row, moved_col)
                     moves.append(new_board_class)
                 else:
-                    # cant move there so the path is blocked, change direction
+                    # the path is blocked so cant move there, change direction
                     break
 
         return moves
-    
+
     def check_inside_board(self, row, col):
-        if  0 <= row < BOARD_LENGTH and 0 <= col < BOARD_LENGTH:
+        if 0 <= row < BOARD_LENGTH and 0 <= col < BOARD_LENGTH:
             return True
         else:
             return False
@@ -341,7 +373,6 @@ class Board:
         else:
             return len(self.pawn_moves(row, col))
 
-
     def king_escapes(self) -> int:
 
         up = (1, 0)
@@ -362,16 +393,20 @@ class Board:
             r, c = row + dr, col + dc
             while self.check_inside_board(r, c):
                 if self.is_escape(r, c):
-                    if self.at(r,c) == Tile.EMPTY.value:
+                    if self.at(r, c) == Tile.EMPTY.value:
                         escapes += 1
                     break
-                if self.at(r,c) != Tile.EMPTY.value or self.is_camp(r,c) or self.is_throne(r,c):
+                if (
+                    self.at(r, c) != Tile.EMPTY.value
+                    or self.is_camp(r, c)
+                    or self.is_throne(r, c)
+                ):
                     break
                 r += dr
-                c += dc            
+                c += dc
 
         return escapes
-    
+
     def king_surr(self) -> int:
         up = (1, 0)
         down = (-1, 0)
@@ -389,15 +424,15 @@ class Board:
 
         for dr, dc in [up, down, left, right]:
             r, c = dr + row, dc + col
-            if(self.check_inside_board(r, c)):
-                if(
-                    self.at(r, c) == Tile.BLACK.value or 
-                    self.is_camp(r,c) or 
-                    self.is_throne(r,c)
+            if self.check_inside_board(r, c):
+                if (
+                    self.at(r, c) == Tile.BLACK.value
+                    or self.is_camp(r, c)
+                    or self.is_throne(r, c)
                 ):
                     surr += 1
         return surr
-            
+
 
 class GameState:
     def __init__(self, board: Board, playing_as: Player, turn_player: Player, turn=0):
@@ -451,9 +486,9 @@ class GameState:
         down = (-1, 0)
         left = (0, -1)
         right = (0, 1)
-        
+
         board = Board(self._board.previous)
-        
+
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
                 if board.at(row, col) == Tile.KING.value:
@@ -463,7 +498,7 @@ class GameState:
                     for rd, cd in [up, down, left, right]:
                         moved_row = row + rd
                         moved_col = col + cd
-                        if(
+                        if (
                             board.at(moved_row, moved_col) == Tile.EMPTY.value
                             or board.at(moved_row, moved_col) == Tile.WHITE.value
                         ):
@@ -472,5 +507,5 @@ class GameState:
                             capture += 1
                     if capture == 4:
                         return True
-                    
+
         return False
