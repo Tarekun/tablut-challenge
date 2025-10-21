@@ -47,30 +47,30 @@ def alpha_beta_value_model(
 
 
 def alpha_beta_policy_model(
-    model: TablutNet, top_p: float, max_depth: int
+    model: TablutNet, max_depth: int, branching: int
 ) -> Callable[[GameState], GameState]:
     """Minimax algorithm with alpha/beta cuts that uses hand picked averaged heuristics,
     a `max_depth` stopping cretirion, and a top P policy algorithm with the probability
     distributions provided by `model`.
     `model` takes all available actions and returns a probability distribution over them,
-    we pick the most probable action to search until the cumulative probability reaches top_p
+    we pick the `branching` most probable actions
     """
 
     return alpha_beta(
         _handpicked_heuristics,
         _max_depth_criterion(max_depth),
-        _network_top_p_policy(model, top_p),
+        _network_top_n_policy(model, branching),
     )
 
 
-def alpha_beta_full_model(model: TablutNet, top_p: float, max_depth: int):
+def alpha_beta_full_model(model: TablutNet, max_depth: int, branching: int):
     """Minimax alpha/beta search fully guided by the network `model`.
     It selects actions with cumulative probability of `top_p` according to `model`
     and evaluates states with `model`, up to `max_depth` in the search tree"""
     return alpha_beta(
         _network_value_heuristic(model),
         _max_depth_criterion(max_depth),
-        _network_top_p_policy(model, top_p),
+        _network_top_n_policy(model, branching),
     )
 
 
@@ -186,6 +186,16 @@ def _random_fixed_actions(num: int):
     return implementation
 
 
+def _heuristic_fixed_actions(num: int, heuristic):
+    def implementation(state: GameState):
+        moves = state.next_moves()
+        # random.shuffle(moves)
+        moves.sort(key=lambda move: heuristic(move), reverse=True)
+        return moves[:num]
+
+    return implementation
+
+
 def _network_top_p_policy(model: TablutNet, top_p: float):
     def implementation(state: GameState):
         moves: list[GameState] = state.next_moves()
@@ -208,6 +218,22 @@ def _network_top_p_policy(model: TablutNet, top_p: float):
             m for m, keep in zip(sorted_moves, cutoff_mask) if keep.item()
         ]
         return filtered_moves
+
+    return implementation
+
+
+def _network_top_n_policy(model: TablutNet, top_n: int):
+    def implementation(state: GameState):
+        moves: list[GameState] = state.next_moves()
+        if len(moves) <= top_n:
+            return moves
+
+        with torch.no_grad():
+            _, probs = model(moves)
+
+        top_indices = torch.topk(probs, top_n, sorted=True).indices
+        top_moves = [moves[i] for i in top_indices.tolist()]
+        return top_moves
 
     return implementation
 

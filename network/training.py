@@ -132,7 +132,7 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
         print("Done")
 
         outcome, game_states = play_game(
-            player, "Trainee", "localhost", player_search, track=True
+            player, "trainee", "localhost", player_search, track=True
         )
         end_time = datetime.datetime.now()
         experiences.extend(_prepare_game_state_data(outcome, game_states, player))
@@ -186,14 +186,24 @@ def _random_search_profile(
     model: TablutNet,
 ) -> tuple[str, Callable[[GameState], GameState]]:
     default_depth = 4
-    default_branching = 12
+    default_branching = 9
+    default_top_p = 0.15
     searches = [
-        # alpha_beta_basic(default_depth, default_branching),
-        # alpha_beta_value_model(model, default_depth, default_branching),
-        # alpha_beta_policy_model(model, 0.5, default_depth),
-        # alpha_beta_full_model(model, 0.5, default_depth),
-        ("model_value_maximization", model_value_maximization(model)),
-        # model_greedy_sampling(model),
+        # ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
+        # (
+        #     "alpha_beta_value_model",
+        #     alpha_beta_value_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_policy_model",
+        #     alpha_beta_policy_model(model, default_depth, default_branching),
+        # ),
+        (
+            "alpha_beta_full_model",
+            alpha_beta_full_model(model, default_depth, default_branching),
+        ),
+        # ("model_value_maximization", model_value_maximization(model)),
+        # ("model_greedy_sampling", model_greedy_sampling(model)),
     ]
     return random.choice(searches)
 
@@ -203,7 +213,6 @@ def _prepare_game_state_data(
 ) -> list[tuple[GameState, int]]:
     game_history = []
     for state in game_states:
-        print(f"processing:\n{state}\n")
         outcome = outcome if state.turn_player == playing_as else -1 * outcome
         game_history.append((state, outcome))
 
