@@ -16,8 +16,9 @@ if player_input == "white":
 elif player_input == "black":
     player = Player.BLACK
 else:
-    print("Invalid player. Must be either 'white' or 'black'.")
-    sys.exit(1)
+    raise ValueError(
+        f"Invalid player. Must be either 'white' or 'black', not {player_input}."
+    )
 
-search = alpha_beta_basic(3, 10)
+search = alpha_beta_basic(4, 30)
 play_game(player, "MyPythonBot", server_ip, search)

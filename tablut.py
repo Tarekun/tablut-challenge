@@ -1,6 +1,7 @@
 from enum import Enum
 import copy
 import numpy as np
+from typing import Tuple
 
 
 BOARD_LENGTH = 9
@@ -73,6 +74,14 @@ class Tile(Enum):
 class Board:
     def __init__(self, board: list[list[str]]):
         self.board: list[list[str]] = board
+        self._previous: list[list[str]] | None = None
+
+    @property
+    def previous(self):
+        if self._previous is not None:
+            return self._previous
+        else:
+            return self.board
 
     def __str__(self) -> str:
         string = ""
@@ -87,6 +96,7 @@ class Board:
         return string
 
     def action_to(self, other) -> dict:  # type: ignore
+        other = other.previous
         differences = []
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
@@ -115,7 +125,7 @@ class Board:
                 "turn": self[first["row"]][first["col"]],
             }
 
-    def at(self, row: int, col: int):
+    def at(self, row: int, col: int) -> str:
         """Returns the tile at [row,col]"""
         return self.board[row][col]
 
@@ -147,6 +157,20 @@ class Board:
             ]
         )
 
+    def camp_id(self, row: int, col: int) -> str | None:
+        if (row == 0 and col in (3, 4, 5)) or (row == 1 and col == 4):
+            return "top"
+        if (row == 8 and col in (3, 4, 5)) or (row == 7 and col == 4):
+            return "bottom"
+        if (col == 0 and row in (3, 4, 5)) or (col == 1 and row == 4):
+            return "left"
+        if (col == 8 and row in (3, 4, 5)) or (col == 7 and row == 4):
+            return "right"
+        return None
+
+    def is_throne(self, row: int, col: int) -> bool:
+        return row == 4 and col == 4
+
     def is_escape(self, row: int, col: int) -> bool:
         return any(
             [
@@ -159,11 +183,84 @@ class Board:
             ]
         )
 
-    def solve_captures(self):
+    def valid_move(
+        self, from_row: int, from_col: int, to_row: int, to_col: int
+    ) -> bool:
+        """Returns `True` iff the move from (from_row, from_col) to (to_row, to_col) is
+        a valid one in the current board"""
+        return (
+            self.is_empty(to_row, to_col)
+            and self.check_inside_board(to_row, to_col)
+            and (
+                # we stay inside the same camp
+                self.camp_id(to_row, to_col) == self.camp_id(from_row, from_col)
+                # OR we're targetting a non-camp tile
+                or self.is_camp(to_row, to_col) is None
+            )
+        )
+
+    def solve_captures(self, row, col):
         """Updates the current board if captures can be made, by removing from the board
-        the captured pawn"""
-        # TODO: implement if needed
-        pass
+        the captured pawn. `row` and `col` refer to the tile the last pawn moved to"""
+
+        def _generic_capture(
+            moved_pawn: str, enemy_pawn: str, ally_row: int, ally_col: int
+        ) -> bool:
+            ally_pawn: str = self[ally_row][ally_col]
+            valid_ally = (
+                moved_pawn == ally_pawn
+                or (
+                    ally_pawn == Tile.EMPTY.value and self.is_throne(ally_row, ally_col)
+                )
+                or (ally_pawn == Tile.EMPTY.value and self.is_camp(ally_row, ally_col))
+            )
+            valid_enemy = (
+                (moved_pawn == Tile.WHITE.value or moved_pawn == Tile.KING.value)
+                and enemy_pawn == Tile.BLACK.value
+            ) or (
+                moved_pawn == Tile.BLACK.value
+                and (enemy_pawn == Tile.WHITE.value or enemy_pawn == Tile.KING.value)
+            )
+            return valid_ally and valid_enemy
+
+        up = (1, 0)
+        down = (-1, 0)
+        left = (0, -1)
+        right = (0, 1)
+        pawn: str = self.at(row, col)
+        for rd, cd in [up, down, left, right]:
+            enemy_row = row + rd
+            enemy_col = col + cd
+            ally_row = enemy_row + rd
+            ally_col = enemy_col + cd
+            # proceed only if both are inside (captured is not on the side of the board)
+            if self.check_inside_board(
+                enemy_row, enemy_col
+            ) and self.check_inside_board(ally_row, ally_col):
+                enemy_pawn = self.at(enemy_row, enemy_col)
+
+                # if king it needs to be cornered from all directions
+                if pawn == Tile.BLACK.value and enemy_pawn == Tile.KING.value:
+                    fully_cornered = True
+                    for row_step, col_step in [up, down, left, right]:
+                        ally_row = enemy_row + row_step
+                        ally_col = enemy_col + col_step
+                        if self.check_inside_board(
+                            ally_row, ally_col
+                        ) and not _generic_capture(
+                            pawn, enemy_pawn, ally_row, ally_col
+                        ):
+                            fully_cornered = False
+
+                    if fully_cornered:
+                        self._previous = copy.deepcopy(self.board)
+                        self.board[enemy_row][enemy_col] = Tile.EMPTY.value
+                # otherwise run generic capture check
+                elif _generic_capture(pawn, enemy_pawn, ally_row, ally_col):
+                    self._previous = copy.deepcopy(self.board)
+                    self.board[enemy_row][enemy_col] = Tile.EMPTY.value
+
+        return
 
     def pawn_moves(self, row: int, col: int) -> list:
         """Generates all boards where the pawn at [row,col] can move to"""
@@ -182,27 +279,26 @@ class Board:
             for step in range(1, BOARD_LENGTH):
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
-                # TODO: refactor to a simpler valid_move?
-                # TODO: pawns in the middle of the camp cant move now
-                if (
-                    self.is_empty(moved_row, moved_col)
-                    and not self.is_camp(moved_row, moved_col)
-                    and 0 <= moved_row < BOARD_LENGTH
-                    and 0 <= moved_col < BOARD_LENGTH
-                ):
+
+                if self.valid_move(row, col, moved_row, moved_col):
                     new_board = copy.deepcopy(self.board)
                     new_board[row][col] = Tile.EMPTY.value
                     new_board[moved_row][moved_col] = pawn
-                    new_board_class = Board(new_board)
-                    # TODO: is this really needed or does the server handle it?
-                    # new_board_class.solve_captures()
-                    moves.append(new_board_class)
 
+                    new_board_class = Board(new_board)
+                    new_board_class.solve_captures(moved_row, moved_col)
+                    moves.append(new_board_class)
                 else:
-                    # cont move there so the path is blocked, change direction
+                    # the path is blocked so cant move there, change direction
                     break
 
         return moves
+
+    def check_inside_board(self, row, col):
+        if 0 <= row < BOARD_LENGTH and 0 <= col < BOARD_LENGTH:
+            return True
+        else:
+            return False
 
     def generate_all_moves(self, player: Player) -> list:
         moves = []
@@ -251,6 +347,66 @@ class Board:
             return 0
         else:
             return len(self.pawn_moves(row, col))
+
+    def king_escapes(self) -> int:
+
+        up = (1, 0)
+        down = (-1, 0)
+        left = (0, -1)
+        right = (0, 1)
+
+        row, col = None, None
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if self[i][j] == Tile.KING.value:
+                    row, col = i, j
+                    break
+            if row is not None:
+                break
+        escapes = 0
+        for dr, dc in [up, down, left, right]:
+            r, c = row + dr, col + dc
+            while self.check_inside_board(r, c):
+                if self.is_escape(r, c):
+                    if self.at(r, c) == Tile.EMPTY.value:
+                        escapes += 1
+                    break
+                if (
+                    self.at(r, c) != Tile.EMPTY.value
+                    or self.is_camp(r, c)
+                    or self.is_throne(r, c)
+                ):
+                    break
+                r += dr
+                c += dc
+
+        return escapes
+
+    def king_surr(self) -> int:
+        up = (1, 0)
+        down = (-1, 0)
+        left = (0, -1)
+        right = (0, 1)
+        row, col = None, None
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if self[i][j] == Tile.KING.value:
+                    row, col = i, j
+                    break
+            if row is not None:
+                break
+        surr = 0
+
+        for dr, dc in [up, down, left, right]:
+            r, c = dr + row, dc + col
+            if self.check_inside_board(r, c):
+                if (
+                    self.at(r, c) == Tile.BLACK.value
+                    or self.is_camp(r, c)
+                    or self.is_throne(r, c)
+                ):
+                    surr += 1
+        return surr
 
 
 class GameState:
@@ -301,4 +457,30 @@ class GameState:
         return moves
 
     def is_end_state(self) -> bool:
+        up = (1, 0)
+        down = (-1, 0)
+        left = (0, -1)
+        right = (0, 1)
+
+        board = Board(self._board.previous)
+
+        for row in range(BOARD_LENGTH):
+            for col in range(BOARD_LENGTH):
+                if board.at(row, col) == Tile.KING.value:
+                    if board.is_escape(row, col):
+                        return True
+                    capture = 0
+                    for rd, cd in [up, down, left, right]:
+                        moved_row = row + rd
+                        moved_col = col + cd
+                        if (
+                            board.at(moved_row, moved_col) == Tile.EMPTY.value
+                            or board.at(moved_row, moved_col) == Tile.WHITE.value
+                        ):
+                            break
+                        else:
+                            capture += 1
+                    if capture == 4:
+                        return True
+
         return False
