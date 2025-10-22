@@ -125,7 +125,7 @@ class Board:
                 "turn": self[first["row"]][first["col"]],
             }
 
-    def at(self, row: int, col: int):
+    def at(self, row: int, col: int) -> str:
         """Returns the tile at [row,col]"""
         return self.board[row][col]
 
@@ -203,87 +203,63 @@ class Board:
         """Updates the current board if captures can be made, by removing from the board
         the captured pawn. `row` and `col` refer to the tile the last pawn moved to"""
 
+        def _generic_capture(
+            moved_pawn: str, enemy_pawn: str, ally_row: int, ally_col: int
+        ) -> bool:
+            ally_pawn: str = self[ally_row][ally_col]
+            valid_ally = (
+                moved_pawn == ally_pawn
+                or (
+                    ally_pawn == Tile.EMPTY.value and self.is_throne(ally_row, ally_col)
+                )
+                or (ally_pawn == Tile.EMPTY.value and self.is_camp(ally_row, ally_col))
+            )
+            valid_enemy = (
+                (moved_pawn == Tile.WHITE.value or moved_pawn == Tile.KING.value)
+                and enemy_pawn == Tile.BLACK.value
+            ) or (
+                moved_pawn == Tile.BLACK.value
+                and (enemy_pawn == Tile.WHITE.value or enemy_pawn == Tile.KING.value)
+            )
+            return valid_ally and valid_enemy
+
         up = (1, 0)
         down = (-1, 0)
         left = (0, -1)
         right = (0, 1)
-        pawn = self.at(row, col)
-
-        def capture_available(pawn, enemy_pawn, ally_pawn):
-            # se gioca white
-            return (
-                (pawn == Tile.WHITE.value or pawn == Tile.KING.value)
-                and enemy_pawn == Tile.BLACK.value
-                and (
-                    ally_pawn == Tile.WHITE.value
-                    or ally_pawn == Tile.KING.value
-                    or self.is_throne(ally_row, ally_col)
-                    or self.is_camp(ally_row, ally_col)
-                )
-            )
-
+        pawn: str = self.at(row, col)
         for rd, cd in [up, down, left, right]:
-            check_row = row + rd
-            check_col = col + cd
-            if self.check_inside_board(check_row, check_col):
-                enemy_pawn = self.at(check_row, check_col)
-                # PLAYING WHITE
-                if pawn == Tile.WHITE.value or pawn == Tile.KING.value:
-                    if enemy_pawn == Tile.BLACK.value:
-                        ally_row = check_row + rd
-                        ally_col = check_col + cd
-                        if self.check_inside_board(ally_row, ally_col):
-                            ally_pawn = self.at(ally_row, ally_col)
+            enemy_row = row + rd
+            enemy_col = col + cd
+            ally_row = enemy_row + rd
+            ally_col = enemy_col + cd
+            # proceed only if both are inside (captured is not on the side of the board)
+            if self.check_inside_board(
+                enemy_row, enemy_col
+            ) and self.check_inside_board(ally_row, ally_col):
+                enemy_pawn = self.at(enemy_row, enemy_col)
 
-                            # TODO; make this logic consistent
-                            if (
-                                ally_pawn == Tile.WHITE.value
-                                or ally_pawn == Tile.KING.value
-                                or
-                                # (new_board_class.is_camp(ally_row, ally_col) and ally_pawn == Tile.EMPTY.value) or
-                                self.is_throne(ally_row, ally_col)
-                            ):
+                # if king it needs to be cornered from all directions
+                if pawn == Tile.BLACK.value and enemy_pawn == Tile.KING.value:
+                    fully_cornered = True
+                    for row_step, col_step in [up, down, left, right]:
+                        ally_row = enemy_row + row_step
+                        ally_col = enemy_col + col_step
+                        if self.check_inside_board(
+                            ally_row, ally_col
+                        ) and not _generic_capture(
+                            pawn, enemy_pawn, ally_row, ally_col
+                        ):
+                            fully_cornered = False
 
-                                self._previous = copy.deepcopy(self.board)
-                                self.board[check_row][check_col] = Tile.EMPTY.value
+                    if fully_cornered:
+                        self._previous = copy.deepcopy(self.board)
+                        self.board[enemy_row][enemy_col] = Tile.EMPTY.value
+                # otherwise run generic capture check
+                elif _generic_capture(pawn, enemy_pawn, ally_row, ally_col):
+                    self._previous = copy.deepcopy(self.board)
+                    self.board[enemy_row][enemy_col] = Tile.EMPTY.value
 
-                # PLAYING BLACK
-                elif pawn == Tile.BLACK.value:
-                    # ENEMY WHITE
-                    if enemy_pawn == Tile.WHITE.value:
-                        ally_row = check_row + rd
-                        ally_col = check_col + cd
-                        if self.check_inside_board(ally_row, ally_col):
-                            ally_pawn = self.at(ally_row, ally_col)
-                            if (
-                                self.is_camp(ally_row, ally_col)
-                                or ally_pawn == Tile.BLACK.value
-                                or (
-                                    ally_pawn == Tile.EMPTY.value
-                                    and self.is_throne(ally_row, ally_col)
-                                )
-                            ):
-
-                                self._previous = copy.deepcopy(self.board)
-                                self.board[check_row][check_col] = Tile.EMPTY.value
-
-                    # ENEMY KING
-                    elif enemy_pawn == Tile.KING.value:
-                        for row_step, col_step in [up, down, left, right]:
-                            ally_row = check_row + row_step
-                            ally_col = check_col + col_step
-                            if (ally_row, ally_col) != (
-                                row,
-                                col,
-                            ) and self.check_inside_board(ally_row, ally_col):
-                                ally_pawn = self.at(ally_row, ally_col)
-                                if (
-                                    ally_pawn == Tile.EMPTY.value
-                                    or ally_pawn == Tile.WHITE.value
-                                ):
-                                    break
-                                # else:
-                                #     caught_board[check_row][check_col] = Tile.EMPTY.value
         return
 
     def pawn_moves(self, row: int, col: int) -> list:
@@ -303,7 +279,6 @@ class Board:
             for step in range(1, BOARD_LENGTH):
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
-                # TODO: refactor to a simpler valid_move?
 
                 if self.valid_move(row, col, moved_row, moved_col):
                     new_board = copy.deepcopy(self.board)

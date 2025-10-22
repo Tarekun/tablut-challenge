@@ -117,8 +117,8 @@ def train(
     `batch_size` actions from the experience buffer and performs gradient optimization on those samples
     """
     for iteration in range(iterations):
-        # print(f"Starting Iteration {iteration + 1}/{iterations}")
-        # print(f"\tRunning {games} self-play games...")
+        print(f"Starting Iteration {iteration + 1}/{iterations}")
+        print(f"\tRunning {games} self-play games...")
         experience_buffer = run_self_play_game(model, num_games=games)
 
         print(

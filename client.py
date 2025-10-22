@@ -17,10 +17,10 @@ def play_turn(
     """Plays one turn of the game. Returns True if the game is over, False otherwise"""
     state_json = _read_string_from_stream(client_socket)
     game_state, turn = parse_state(state_json, playing_as)
+    print(f"current game state:\n{game_state}")
 
     if turn.plays(playing_as):
         print(f"It's our turn ({playing_as}). Calculating move...")
-        print(f"current game state:\n{game_state}")
         move = search_algorithm(game_state)
         action = game_state.board.action_to(move.board)
         print(f"New State:\n{move}")

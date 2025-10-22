@@ -89,7 +89,6 @@ def model_value_maximization_search(
         best_idx = int(torch.argmax(values).item())
         best_value = values[best_idx].item()
 
-        # print(f"best value found was: {best_value}")
         return moves[best_idx]
 
     return maximize_heuristic
