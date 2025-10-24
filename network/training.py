@@ -53,7 +53,7 @@ def train(
 
 def train_step(
     model: TablutNet,
-    experience_buffer: list[tuple[GameState, int]],
+    experience_buffer: list[tuple[GameState, GameState, int]],
     optimizer,
     loss_fn,
     batch_size: int,
@@ -91,79 +91,19 @@ def train_step(
     return loss.item()
 
 
-# TODO: also collect the picked action
-def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
+def run_self_play_games(model, num_games=1) -> list[tuple[GameState, GameState, int]]:
     """Runs `num_games` number of games in a sequence collecting the states being played
     and the picked action at each state, together with the game result (±1) from the
     perspective of the turn player"""
 
-    def simulate_one_game():
-        player = random.choice([Player.WHITE, Player.BLACK])
-        player_search_name, player_search = _random_search_profile(model)
-        opp_search_name, opp_search = _random_search_profile(model)
-        experiences: list[tuple[GameState, int]] = []
-        start_time = datetime.datetime.now()
-
-        print("Starting server...", end=" ")
-        server = subprocess.Popen(
-            ["ant", "server", "WHITE", "localhost"],
-            cwd="C:\\Users\\danie\\codice\\uni\\TablutCompetition\\Tablut",
-            stdout=open("server.log", "w"),
-            start_new_session=True,  # detach completely
-            shell=True,
-        )
-        time.sleep(1)
-        print("Done")
-
-        print("Starting opponent...", end=" ")
-        opp_results = {}
-        opp_thread = threading.Thread(
-            target=_opponent_gameloop_wrapper,
-            args=(
-                player.complement(),
-                "opponent",
-                "localhost",
-                opp_search,
-                opp_results,
-            ),
-        )
-        opp_thread.start()
-        time.sleep(1)
-        print("Done")
-
-        outcome, game_states = play_game(
-            player, "trainee", "localhost", player_search, track=True
-        )
-        end_time = datetime.datetime.now()
-        experiences.extend(_prepare_game_state_data(outcome, game_states, player))
-        opp_thread.join()
-        opp_outcome = opp_results["outcome"]
-        opp_game_states = opp_results["game_states"]
-        experiences.extend(
-            _prepare_game_state_data(opp_outcome, opp_game_states, player.complement())
-        )
-
-        analytics = {
-            "trainee_player": player.value,
-            "trainee_strategy": player_search_name,
-            "trainee_outcome": outcome,
-            "opp_player": player.complement().value,
-            "opp_strategy": opp_search_name,
-            "opp_outcome": opp_outcome,
-            "start_time": start_time,
-            "end_time": end_time,
-            "duration_s": (end_time - start_time).total_seconds(),
-        }
-        return analytics, experiences
-
-    game_history = []
+    game_history: list[tuple[GameState, GameState, int]] = []
     analytics = []
     total_duration = 0
 
     # TODO: run games in parallel
     for _ in range(num_games):
         start_time = time.time()
-        analytics_record, experiences = simulate_one_game()
+        analytics_record, experiences = _simulate_one_game(model)
         end_time = time.time()
 
         analytics.append(analytics_record)
@@ -182,6 +122,66 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, int]]:
 
 
 #################### HELPER FUNCTIONS
+def _simulate_one_game(model: TablutNet):
+    player = random.choice([Player.WHITE, Player.BLACK])
+    player_search_name, player_search = _random_search_profile(model)
+    opp_search_name, opp_search = _random_search_profile(model)
+    experiences: list[tuple[GameState, GameState, int]] = []
+    start_time = datetime.datetime.now()
+
+    print("Starting server...", end=" ")
+    server = subprocess.Popen(
+        ["ant", "server", "WHITE", "localhost"],
+        cwd="C:\\Users\\danie\\codice\\uni\\TablutCompetition\\Tablut",
+        stdout=open("server.log", "w"),
+        start_new_session=True,  # detach completely
+        shell=True,
+    )
+    time.sleep(1)
+    print("Done")
+
+    print("Starting opponent...", end=" ")
+    opp_results = {}
+    opp_thread = threading.Thread(
+        target=_opponent_gameloop_wrapper,
+        args=(
+            player.complement(),
+            "opponent",
+            "localhost",
+            opp_search,
+            opp_results,
+        ),
+    )
+    opp_thread.start()
+    time.sleep(1)
+    print("Done")
+
+    outcome, game_turns = play_game(
+        player, "trainee", "localhost", player_search, track=True
+    )
+    end_time = datetime.datetime.now()
+    experiences.extend(_prepare_game_state_data(outcome, game_turns, player))
+    opp_thread.join()
+    opp_outcome = opp_results["outcome"]
+    opp_game_turns = opp_results["game_turns"]
+    experiences.extend(
+        _prepare_game_state_data(opp_outcome, opp_game_turns, player.complement())
+    )
+
+    analytics = {
+        "trainee_player": player.value,
+        "trainee_strategy": player_search_name,
+        "trainee_outcome": outcome,
+        "opp_player": player.complement().value,
+        "opp_strategy": opp_search_name,
+        "opp_outcome": opp_outcome,
+        "start_time": start_time,
+        "end_time": end_time,
+        "duration_s": (end_time - start_time).total_seconds(),
+    }
+    return analytics, experiences
+
+
 def _random_search_profile(
     model: TablutNet,
 ) -> tuple[str, Callable[[GameState], GameState]]:
@@ -209,17 +209,17 @@ def _random_search_profile(
 
 
 def _prepare_game_state_data(
-    outcome: int, game_states: list[GameState], playing_as: Player
-) -> list[tuple[GameState, int]]:
-    game_history = []
-    for state in game_states:
+    outcome: int, game_turns: list[tuple[GameState, GameState]], playing_as: Player
+) -> list[tuple[GameState, GameState, int]]:
+    game_history: list[tuple[GameState, GameState, int]] = []
+    for state, move in game_turns:
         outcome = outcome if state.turn_player == playing_as else -1 * outcome
-        game_history.append((state, outcome))
+        game_history.append((state, move, outcome))
 
     return game_history
 
 
 def _opponent_gameloop_wrapper(player, opponent_name, ip, search_func, results):
-    outcome, game_states = play_game(player, opponent_name, ip, search_func, track=True)
+    outcome, game_turns = play_game(player, opponent_name, ip, search_func, track=True)
     results["outcome"] = outcome
-    results["game_states"] = game_states
+    results["game_turns"] = game_turns

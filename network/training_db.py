@@ -25,12 +25,13 @@ def append_to_json_file(file_path, new_data):
 
 
 def persist_self_play_run(
-    experiences: list[tuple[GameState, int]], analytics: list[dict]
+    experiences: list[tuple[GameState, GameState, int]], analytics: list[dict]
 ):
     mapped_experiences = []
-    for state, outcome in experiences:
+    for state, move, outcome in experiences:
         state_dict = {"board": state.board.board, "turn": state.turn.value}
-        experience_dict = {"state": state_dict, "outcome": outcome}
+        move_dict = {"board": move.board.board, "turn": move.turn.value}
+        experience_dict = {"state": state_dict, "move": move_dict, "outcome": outcome}
         mapped_experiences.append(experience_dict)
 
     append_to_json_file("experiences.json", mapped_experiences)

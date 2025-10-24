@@ -13,7 +13,7 @@ def play_turn(
     client_socket: socket.socket,
     playing_as: Player,
     search_algorithm: Callable[[GameState], GameState],
-) -> tuple[int | None, GameState | None]:
+) -> tuple[int | None, GameState | None, GameState | None]:
     """Plays one turn of the game. Returns a tuple containig a int | None in the first element
     valued with the game's outcome iff this was the last turn, the GameState analized if it was
     our turn"""
@@ -27,21 +27,21 @@ def play_turn(
         action = game_state.board.action_to(move.board)
         print(f"New State:\n{move}")
         _write_string_to_stream(client_socket, json.dumps(action))
-        return (None, game_state)
+        return (None, game_state, move)
 
     elif turn.wins(playing_as):
         print(f"Endgame, {playing_as} won! Yippie")
-        return (1, game_state)
+        return (1, game_state, None)
     elif turn.wins(playing_as.complement()):
         print(f"Endgame, {playing_as} lost! Damn...")
-        return (-1, game_state)
+        return (-1, game_state, None)
     elif turn == Turn.DRAW:
         print(f"Endgame, it's a draw")
-        return (0, game_state)
+        return (0, game_state, None)
 
     else:
         print(f"It's opponent's turn. Waiting for next state...")
-        return (None, None)
+        return (None, None, None)
 
 
 def play_game(
@@ -50,21 +50,21 @@ def play_game(
     ip: str,
     search_algorithm: Callable[[GameState], GameState],
     track: bool = False,
-) -> tuple[int, list[GameState]]:
+) -> tuple[int, list[tuple[GameState, GameState]]]:
     """Implements the client's connection and gameplay loop."""
 
     port = WHITE_PORT if player.is_white() else BLACK_PORT
-    tracked_states = []
+    tracked_states: list[tuple[GameState, GameState]] = []
     client_socket = None
 
     try:
         client_socket = initialize_connection(name, ip, port)
         while True:
-            (outcome, analyzed_state) = play_turn(
+            (outcome, analyzed_state, move) = play_turn(
                 client_socket, player, search_algorithm
             )
-            if track and analyzed_state is not None:
-                tracked_states.append(analyzed_state)
+            if track and move is not None and analyzed_state is not None:
+                tracked_states.append((analyzed_state, move))
             if outcome is not None:
                 break
 
