@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import random
 import subprocess
 import time
@@ -70,25 +71,44 @@ def train_step(
     # sample a random batch of experiences
     batch = random.sample(experience_buffer, batch_size)
     states = [item[0] for item in batch]
-    outcomes = [item[1] for item in batch]
+    picked_moves = [item[1] for item in batch]
+    outcomes = [item[2] for item in batch]
     tensor_outcomes = torch.tensor(outcomes, dtype=torch.float32).to(
         next(model.parameters()).device
     )
+    policy_inputs = []
+    target_indices = []
+    for i in range(len(batch)):
+        target_move = picked_moves[i]
+        search_space = batch[i][0].next_moves()
+        # distribution = torch.zeros(len(search_space))
+        for j in range(len(search_space)):
+            if search_space[j] == target_move:
+                target_indices.append(j)
+                break
+        policy_inputs.append(search_space)
 
-    # forward pass
-    values, probs = model(states)
-    loss = loss_fn(values, tensor_outcomes)
-    print(outcomes)
-    print(values)
+    # value forward pass
+    values = model.value(states)
+    value_loss = loss_fn(values, tensor_outcomes)
+    # policy forward pass
+    logits_per_group = model.train_policy(policy_inputs)
+    policy_losses = []
+    for logits, target_idx in zip(logits_per_group, target_indices):
+        print(len(logits_per_group))
+        log_probs = F.log_softmax(logits, dim=0)
+        policy_losses.append(-log_probs[target_idx])
+    policy_loss = torch.stack(policy_losses).mean()
 
     # backward pass and update weights
+    total_loss = value_loss + 1.0 * policy_loss
     optimizer.zero_grad()
-    loss.backward()
+    total_loss.backward()
     # Optional: Gradient clipping to prevent exploding gradients
     # torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
     optimizer.step()
 
-    return loss.item()
+    return total_loss.item()
 
 
 def run_self_play_games(model, num_games=1) -> list[tuple[GameState, GameState, int]]:
@@ -132,13 +152,14 @@ def _simulate_one_game(model: TablutNet):
     print("Starting server...", end=" ")
     server = subprocess.Popen(
         ["ant", "server", "WHITE", "localhost"],
-        cwd="C:\\Users\\danie\\codice\\uni\\TablutCompetition\\Tablut",
+        cwd="/home/danieletarek.iaisy/codice/personal/TablutCompetition/Tablut",
+        # cwd="C:\\Users\\danie\\codice\\uni\\TablutCompetition\\Tablut",
         stdout=open("server.log", "w"),
         start_new_session=True,  # detach completely
         shell=True,
     )
-    time.sleep(1)
     print("Done")
+    time.sleep(5)
 
     print("Starting opponent...", end=" ")
     opp_results = {}

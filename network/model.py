@@ -101,7 +101,56 @@ class TablutNet(nn.Module):
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=0)
 
+    def _feature_extraction(self, game_state: GameState | list[GameState]):
+        """Embed single or batch of states → flattened features."""
+        if isinstance(game_state, list):
+            board, playing_as, turn_player = embed_batch_states(game_state)
+        else:
+            board, playing_as, turn_player = embed_game_state(game_state)
+            board = board.unsqueeze(0)  # add batch dimension for consistency
+
+        x = board.to(next(self.parameters()).device)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)
+
+        extra_features = torch.cat([turn_player, playing_as], dim=1).to(x.device)
+        x = torch.cat((x, extra_features), dim=1)
+        x = F.relu(self.fc(x))
+        return x
+
+    def policy(self, states: list[GameState]):
+        """
+        Given candidate next states, returns a probability distribution
+        over them (sums to 1).
+        """
+        logits = self.train_policy(states)
+        probs = self.softmax(logits)
+        return probs
+
+    def value(self, state: GameState | list[GameState]):
+        """
+        Computes scalar value(s) ∈ [-1, 1] for given state(s).
+        - Single GameState → single scalar tensor
+        - List[GameState] → tensor of shape (N,)
+        """
+        x = self._feature_extraction(state)
+        value = self.tanh(self.value_head(x)).squeeze(-1)
+        return value
+
+    def train_policy(self, states: list[GameState]):
+        """
+        Given candidate next states, returns raw logits (no softmax).
+        Used during training to compute per-group log-softmax and NLL loss.
+        """
+        x = self._feature_extraction(states)
+        logits = self.policy_head(x).squeeze(-1)
+        return logits
+
     def forward(self, game_state: GameState | list[GameState]):
+        pass
+
         if isinstance(game_state, list):
             board, playing_as, turn_player = embed_batch_states(game_state)
         else:

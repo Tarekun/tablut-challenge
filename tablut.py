@@ -90,6 +90,13 @@ class Board:
         else:
             return self.board
 
+    def __eq__(self, other):
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if self[i][j] != other[i][j]:
+                    return False
+        return True
+
     def __str__(self) -> str:
         string = ""
         for row in range(BOARD_LENGTH):
@@ -427,6 +434,9 @@ class GameState:
     def __str__(self) -> str:
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
         return f"{header}\n{self.board}"
+
+    def __eq__(self, other):
+        return self.turn_player == other.turn_player and self.board == other.board
 
     @property
     def board(self) -> Board:

@@ -83,11 +83,10 @@ def model_value_maximization(
     def maximize_heuristic(state: GameState) -> GameState:
         moves = state.next_moves()
         with torch.no_grad():
-            (values, probs) = model(moves)  # shape: (N,2)
+            values = model.value(moves)  # shape: (N,2)
 
         # find best move index
         best_idx = int(torch.argmax(values).item())
-        best_value = values[best_idx].item()
 
         return moves[best_idx]
 
@@ -101,11 +100,10 @@ def model_greedy_sampling(model: TablutNet):
     def implementation(state: GameState):
         moves = state.next_moves()
         with torch.no_grad():
-            (values, probs) = model(moves)  # shape: (N,2)
+            probs = model.policy(moves)  # shape: (N,2)
 
         # find best move index
         best_idx = int(torch.argmax(probs).item())
-        best_value = probs[best_idx].item()
 
         return moves[best_idx]
 
@@ -166,7 +164,7 @@ def _handpicked_heuristics(state: GameState) -> float:  # [-1, 1]
 def _network_value_heuristic(model: TablutNet):
     def implementation(state: GameState) -> float:
         with torch.no_grad():
-            value = model(state)  # shape: (N,2)
+            value = model.value(state)
             return value
 
     return implementation
@@ -200,7 +198,7 @@ def _network_top_p_policy(model: TablutNet, top_p: float):
     def implementation(state: GameState):
         moves: list[GameState] = state.next_moves()
         with torch.no_grad():
-            _, probs = model(moves)
+            probs = model.policy(moves)
 
         # sort by prob (descending)
         sorted_indices = torch.argsort(probs, descending=True)
@@ -229,7 +227,7 @@ def _network_top_n_policy(model: TablutNet, top_n: int):
             return moves
 
         with torch.no_grad():
-            _, probs = model(moves)
+            probs = model.policy(moves)
 
         top_indices = torch.topk(probs, top_n, sorted=True).indices
         top_moves = [moves[i] for i in top_indices.tolist()]
