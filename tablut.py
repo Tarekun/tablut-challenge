@@ -89,11 +89,15 @@ class Board:
         string = ""
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
-                string += (
-                    "░"
-                    if self.board[row][col] == Tile.EMPTY.value
-                    else self.board[row][col][0:1]
-                )
+                value = ""
+                if self.board[row][col] == Tile.EMPTY.value: 
+                    if self.is_camp(row, col):
+                        value = "C"
+                    else:
+                        value = "░"
+                else:
+                    value = self.board[row][col][0:1]
+                string += (value)
             string += "\n"
         return string
 
@@ -257,21 +261,18 @@ class Board:
         left = (0, -1)
         right = (0, 1)
         moves: list[Board] = []
-        moves_caught: list[Board] = []
         pawn = self.at(row, col)
         if pawn == Tile.EMPTY.value:
             raise ValueError(f"Tile at [{row},{col}] is empty and no pawn can be moved")
 
-        for direction in [up, down, left, right]:
-            row_change, col_change = direction
+        for row_change, col_change in [up, down, left, right]:
             for step in range(1, BOARD_LENGTH):
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
                 # TODO: refactor to a simpler valid_move?
-
                 if (
                     self.is_empty(moved_row, moved_col) and 
-                    (self.camp_id(moved_row, moved_col) == self.camp_id(row, col)) and 
+                    ((self.is_camp(row, col) and not self.is_camp(moved_row, moved_col)) or self.camp_id(moved_row, moved_col) == self.camp_id(row, col)) and 
                     self.check_inside_board(moved_row, moved_col)
                 ):
                     new_board = copy.deepcopy(self.board)
@@ -446,19 +447,22 @@ class GameState:
 
         return moves
 
-    def is_end_state(self) -> bool:
+    def is_end_state(self) -> bool | str:
         up = (1, 0)
         down = (-1, 0)
         left = (0, -1)
         right = (0, 1)
         
         board = Board(self._board.previous)
-        
+        if self.next_moves() == []:
+            print("no moves")
+            return self.turn_player.complement().value
+
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
                 if board.at(row, col) == Tile.KING.value:
                     if board.is_escape(row, col):
-                        return True
+                        return Player.WHITE.value
                     capture = 0
                     for rd, cd in [up, down, left, right]:
                         moved_row = row + rd
@@ -471,6 +475,20 @@ class GameState:
                         else:
                             capture += 1
                     if capture == 4:
-                        return True
+                        return Player.BLACK.value
                     
         return False
+    
+    def get_result(self, player: Player) -> float:
+        """
+        Restituisce risultato della partita rispetto a `player`:
+        1.0 = vittoria per `player`
+        0.0 = sconfitta per `player`
+        0.5 = pareggio / non determinato
+        """
+        winner = self.playing_as.value
+        if winner is None:
+            if self.is_end_state() or (not self.next_moves()):
+                return 0.5
+            return 0.5
+        return 1.0 if winner == player.value else 0.0

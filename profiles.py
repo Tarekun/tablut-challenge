@@ -3,7 +3,7 @@ import statistics
 import torch
 import numpy as np
 from typing import Callable
-from search import alpha_beta
+from search import alpha_beta, monte_carlo_tree_search
 from network.model import TablutNet
 from tablut import GameState, Player, BLACK_PIECES, WHITE_PIECES, MAX_PAWN_MOVES
 from utils import rescale
@@ -97,6 +97,16 @@ def model_value_maximization_search(
 
 ################### SEARCH STRATEGIES
 
+def mcts_full_model(
+    model: TablutNet
+) -> Callable[[GameState], GameState]:
+    
+    return monte_carlo_tree_search(
+        _network_value_heuristic(model),
+        _network_prob(model, top_p=1.0)
+    )
+    
+    
 
 ################### REUSABLE HEURISTICS
 def _handpicked_heuristics(state: GameState) -> float:  # [-1, 1]
@@ -147,7 +157,7 @@ def _handpicked_heuristics(state: GameState) -> float:  # [-1, 1]
 def _network_value_heuristic(model: TablutNet):
     def implementation(state: GameState) -> float:
         with torch.no_grad():
-            value = model(state)  # shape: (N,2)
+            value, _ = model(state)  # shape: (N,2)
             #print(f"computed value is: {value}")
             return value
 
@@ -195,15 +205,25 @@ def _network_top_p_policy(model: TablutNet, top_p: float):
     return implementation
 
 
+def _network_prob(model: TablutNet, top_p: float):
+    def implementation(moves: list[GameState]):
+        with torch.no_grad():
+            _, probs = model(moves)
+        return probs
+    
+    return implementation
+
 ################### REUSABLE POLICIES
 
 
 ################### REUSABLE STOPPING CRITERIONS
 def _max_depth_criterion(max_depth: int):
     def implementation(state: GameState, depth: int) -> bool:
-        return depth > max_depth or state.is_end_state()
+        return depth > max_depth or bool(state.is_end_state())
 
     return implementation
 
 
 ################### REUSABLE STOPPING CRITERIONS
+
+

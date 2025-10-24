@@ -10,7 +10,7 @@ import time
 from client import play_game
 from tablut import Player
 from tablut import BOARD_LENGTH, GameState
-from profiles import model_value_maximization_search
+from profiles import model_value_maximization_search, mcts_full_model
 from network.model import TablutNet
 
 
@@ -21,7 +21,7 @@ def run_self_play_game(model, num_games=1) -> list:
     perspective of the turn player"""
 
     game_history = []
-    search = model_value_maximization_search(model)
+    search = mcts_full_model(model)
 
     for _ in range(num_games):
         player = Player.WHITE
