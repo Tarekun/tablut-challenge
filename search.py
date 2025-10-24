@@ -1,3 +1,4 @@
+import time
 from typing import Callable
 from tablut import GameState
 
@@ -39,7 +40,6 @@ def alpha_beta(
 
         local_best = float("-inf")
         best_move = None
-        print(" " * depth, end="")
         for move in move_sequence(state):
             (_, value) = min_value(move, alpha, beta, depth + 1)
             if value > local_best:
@@ -59,7 +59,6 @@ def alpha_beta(
 
         local_best = float("inf")
         best_move = None
-        print(" " * depth, end="")
         for move in move_sequence(state):
             (_, value) = max_value(move, alpha, beta, depth + 1)
             if value < local_best:
@@ -72,7 +71,12 @@ def alpha_beta(
         return (best_move, local_best)  # type: ignore
 
     def search_algorithm(state: GameState) -> GameState:
+        start_time = time.perf_counter()
         (best_move, _) = max_value(state, float("-inf"), float("inf"), 0)
+        end_time = time.perf_counter()
+
+        duration = end_time - start_time
+        print(f"MIN/MAX search took {duration:.3f} seconds")
         return best_move
 
     return search_algorithm

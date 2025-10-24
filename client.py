@@ -13,8 +13,10 @@ def play_turn(
     client_socket: socket.socket,
     playing_as: Player,
     search_algorithm: Callable[[GameState], GameState],
-) -> tuple[int | None, GameState]:
-    """Plays one turn of the game. Returns True if the game is over, False otherwise"""
+) -> tuple[int | None, GameState | None, GameState | None]:
+    """Plays one turn of the game. Returns a tuple containig a int | None in the first element
+    valued with the game's outcome iff this was the last turn, the GameState analized if it was
+    our turn"""
     state_json = _read_string_from_stream(client_socket)
     game_state, turn = parse_state(state_json, playing_as)
     print(f"current game state:\n{game_state}")
@@ -25,21 +27,21 @@ def play_turn(
         action = game_state.board.action_to(move.board)
         print(f"New State:\n{move}")
         _write_string_to_stream(client_socket, json.dumps(action))
-        return (None, game_state)
+        return (None, game_state, move)
 
     elif turn.wins(playing_as):
         print(f"Endgame, {playing_as} won! Yippie")
-        return (1, game_state)
+        return (1, game_state, None)
     elif turn.wins(playing_as.complement()):
         print(f"Endgame, {playing_as} lost! Damn...")
-        return (-1, game_state)
+        return (-1, game_state, None)
     elif turn == Turn.DRAW:
         print(f"Endgame, it's a draw")
-        return (0, game_state)
+        return (0, game_state, None)
 
     else:
         print(f"It's opponent's turn. Waiting for next state...")
-        return (None, game_state)
+        return (None, None, None)
 
 
 def play_game(
@@ -48,21 +50,21 @@ def play_game(
     ip: str,
     search_algorithm: Callable[[GameState], GameState],
     track: bool = False,
-) -> tuple[int, list[GameState]]:
+) -> tuple[int, list[tuple[GameState, GameState]]]:
     """Implements the client's connection and gameplay loop."""
 
     port = WHITE_PORT if player.is_white() else BLACK_PORT
-    tracked_states = []
+    tracked_states: list[tuple[GameState, GameState]] = []
     client_socket = None
 
     try:
         client_socket = initialize_connection(name, ip, port)
         while True:
-            (outcome, analyzed_state) = play_turn(
+            (outcome, analyzed_state, move) = play_turn(
                 client_socket, player, search_algorithm
             )
-            if track:
-                tracked_states.append(analyzed_state)
+            if track and move is not None and analyzed_state is not None:
+                tracked_states.append((analyzed_state, move))
             if outcome is not None:
                 break
 
@@ -74,8 +76,11 @@ def play_game(
 
 
 ########## HELPER FUNCTIONS
-def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
-    """Parses the JSON string of the game state provided by the server"""
+def parse_state(
+    json_string: str, playing_as: Player | None = None
+) -> tuple[GameState, Turn]:
+    """Parses the JSON string of the game state provided by the server. playing_as is optional
+    and if left unspecified will be set to the turn player"""
 
     state = json.loads(json_string)
     turn = None
@@ -87,8 +92,10 @@ def parse_state(json_string: str, playing_as: Player) -> tuple[GameState, Turn]:
             f"Received game state returned a `turn` value which couldn't be matched: {state['turn']}"
         )
 
+    # TODO: review this
     turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
-    return (GameState(Board(state["board"]), playing_as, turn_player), turn)
+    playing_as = playing_as if playing_as is not None else turn_player
+    return (GameState(Board(state["board"]), playing_as, turn), turn)
 
 
 def initialize_connection(player_name: str, ip: str, port: int):

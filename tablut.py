@@ -62,6 +62,13 @@ class Turn(Enum):
     def game_finished(self):
         return self == Turn.WHITE_WINS or self == Turn.BLACK_WINS or self == Turn.DRAW
 
+    def complement(self):
+        if self == Turn.WHITE:
+            return Turn.BLACK
+        # TODO: should check this isnt a final state and raise?
+        else:
+            return Turn.WHITE
+
 
 class Tile(Enum):
     EMPTY = "EMPTY"
@@ -82,6 +89,13 @@ class Board:
             return self._previous
         else:
             return self.board
+
+    def __eq__(self, other):
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if self[i][j] != other[i][j]:
+                    return False
+        return True
 
     def __str__(self) -> str:
         string = ""
@@ -132,6 +146,14 @@ class Board:
     def __getitem__(self, row: int) -> list[str]:
         """Enables board[row] syntax, returns the row"""
         return self.board[row]
+
+    def king_position(self) -> tuple[int | None, int | None]:
+        for i in range(BOARD_LENGTH):
+            for j in range(BOARD_LENGTH):
+                if self[i][j] == Tile.KING.value:
+                    return i, j
+
+        return None, None
 
     def is_empty(self, row: int, col: int) -> bool:
         """Returns True if the tile at [row,col] is empty, False otherwise"""
@@ -195,7 +217,7 @@ class Board:
                 # we stay inside the same camp
                 self.camp_id(to_row, to_col) == self.camp_id(from_row, from_col)
                 # OR we're targetting a non-camp tile
-                or self.is_camp(to_row, to_col) is None
+                or not self.is_camp(to_row, to_col)
             )
         )
 
@@ -355,14 +377,11 @@ class Board:
         left = (0, -1)
         right = (0, 1)
 
-        row, col = None, None
-        for i in range(BOARD_LENGTH):
-            for j in range(BOARD_LENGTH):
-                if self[i][j] == Tile.KING.value:
-                    row, col = i, j
-                    break
-            if row is not None:
-                break
+        row, col = self.king_position()
+        if row is None or col is None:
+            # king gone, no escapes available
+            return 0
+
         escapes = 0
         for dr, dc in [up, down, left, right]:
             r, c = row + dr, col + dc
@@ -387,14 +406,11 @@ class Board:
         down = (-1, 0)
         left = (0, -1)
         right = (0, 1)
-        row, col = None, None
-        for i in range(BOARD_LENGTH):
-            for j in range(BOARD_LENGTH):
-                if self[i][j] == Tile.KING.value:
-                    row, col = i, j
-                    break
-            if row is not None:
-                break
+
+        row, col = self.king_position()
+        if row is None or col is None:
+            # king gone, no escapes available
+            return 0
         surr = 0
 
         for dr, dc in [up, down, left, right]:
@@ -410,15 +426,19 @@ class Board:
 
 
 class GameState:
-    def __init__(self, board: Board, playing_as: Player, turn_player: Player, turn=0):
+    def __init__(self, board: Board, playing_as: Player, turn: Turn, turn_num=0):
         self._board = board
         self._playing_as = playing_as
-        self._turn_player = turn_player
+        self._turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
         self._turn = turn
+        self._turn_num = turn_num
 
     def __str__(self) -> str:
-        header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}\n"
+        header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}"
         return f"{header}\n{self.board}"
+
+    def __eq__(self, other):
+        return self.turn_player == other.turn_player and self.board == other.board
 
     @property
     def board(self) -> Board:
@@ -433,8 +453,12 @@ class GameState:
         return self._turn_player
 
     @property
-    def turn(self) -> int:
+    def turn(self) -> Turn:
         return self._turn
+
+    @property
+    def turn_num(self) -> int:
+        return self._turn_num
 
     def next_moves(self):
         moves = []
@@ -447,8 +471,8 @@ class GameState:
                             GameState(
                                 move,
                                 self.playing_as,
-                                self.turn_player.complement(),
-                                turn=self.turn + 1,
+                                self.turn.complement(),
+                                turn_num=self.turn_num + 1,
                             )
                             for move in pawn_moves
                         ]
@@ -462,25 +486,10 @@ class GameState:
         left = (0, -1)
         right = (0, 1)
 
-        board = Board(self._board.previous)
-
-        for row in range(BOARD_LENGTH):
-            for col in range(BOARD_LENGTH):
-                if board.at(row, col) == Tile.KING.value:
-                    if board.is_escape(row, col):
-                        return True
-                    capture = 0
-                    for rd, cd in [up, down, left, right]:
-                        moved_row = row + rd
-                        moved_col = col + cd
-                        if (
-                            board.at(moved_row, moved_col) == Tile.EMPTY.value
-                            or board.at(moved_row, moved_col) == Tile.WHITE.value
-                        ):
-                            break
-                        else:
-                            capture += 1
-                    if capture == 4:
-                        return True
-
-        return False
+        # self.board.solve_captures()
+        row, col = self.board.king_position()
+        if row is None or col is None:
+            # king was captured
+            return True
+        else:
+            return self.board.is_escape(row, col)
