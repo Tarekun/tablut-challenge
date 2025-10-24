@@ -3,7 +3,7 @@ import statistics
 import torch
 import numpy as np
 from typing import Callable
-from search import alpha_beta
+from search import alpha_beta, monte_carlo_tree_search
 from network.model import TablutNet
 from tablut import GameState, Player, BLACK_PIECES, WHITE_PIECES, MAX_PAWN_MOVES
 from utils import rescale
@@ -111,6 +111,13 @@ def model_greedy_sampling(model: TablutNet):
 
 
 ################### SEARCH STRATEGIES
+
+
+def mcts_full_model(model: TablutNet) -> Callable[[GameState], GameState]:
+
+    return monte_carlo_tree_search(
+        _network_value_heuristic(model), _network_prob(model, top_p=1.0)
+    )
 
 
 ################### REUSABLE HEURISTICS
@@ -241,7 +248,7 @@ def _network_top_n_policy(model: TablutNet, top_n: int):
 ################### REUSABLE STOPPING CRITERIONS
 def _max_depth_criterion(max_depth: int):
     def implementation(state: GameState, depth: int) -> bool:
-        return depth > max_depth or state.is_end_state()
+        return depth > max_depth or bool(state.is_end_state())
 
     return implementation
 

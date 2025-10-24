@@ -1,3 +1,4 @@
+import math
 import time
 from typing import Callable
 from tablut import GameState
@@ -83,21 +84,107 @@ def alpha_beta(
 
 
 def monte_carlo_tree_search(
-    heuristic: Callable[[GameState], float],
-    stop_criterion: Callable[[GameState, int], bool],
-    move_sequence: Callable[[GameState], list[GameState]],
+    heuristic: Callable[[GameState], float],  # heuristic
+    probability: Callable[[list[GameState]], list[float]],  # policy
 ):
     """
     Monte Carlo Tree Search (MCTS) algorithm.
 
     Parameters
     ----------
-    TODO
+    """
 
+    class MCTSNode:
+        def __init__(self, state: GameState, parent=None):
+            self.state: GameState = state
+            self.parent: MCTSNode | None = parent
+            self.children: list[MCTSNode] = []
+            self.visits = 0
+            self.wins = 0
+            self.untried_states = self.state.next_moves()
+
+        def is_terminal(self):
+            """Restituisce True se la partita è finita."""
+            return self.state.is_end_state()
+
+        def is_fully_expanded(self):
+            return len(self.untried_states) == 0 and len(self.children) > 0
+
+        def expand(self):
+            """Crea un figlio prendendo uno stato non ancora esplorato."""
+            new_state = self.untried_states.pop()
+            child = MCTSNode(new_state, parent=self)
+            self.children.append(child)
+            return child
+
+        def best_child(self, c=1.4):
+            """Scelta del figlio migliore secondo UCT."""
+            # Prendiamo gli stati dei figli
+            child_states = [child.state for child in self.children]
+
+            # Otteniamo le probabilità corrispondenti
+            probs = probability(child_states)
+
+            # Ora combiniamo le probabilità nella formula UCT modificata
+            best = max(
+                zip(self.children, probs),
+                key=lambda pair: (pair[0].wins / (pair[0].visits + 1e-6))
+                + c
+                * pair[1]
+                * math.sqrt(math.log(self.visits + 1) / (pair[0].visits + 1e-6)),
+            )
+            return best[0]
+
+        def rollout(self, max_depth=None):
+            """Simula il valore dello stato tramite euristica"""
+            return heuristic(self.state)
+
+            # while not sim_state.is_end_state():
+            #     moves = sim_state.next_moves()
+            #     if not moves:
+            #         print(sim_state.board)
+            #         print("not moves")
+            #         break
+            #     sim_state = random.choice(moves)
+
+            # if sim_state.is_end_state():
+            #     # usa 1/0/0.5 basato sul risultato reale
+            #     return sim_state.get_result(self.state.playing_as)
+
+        def backpropagate(self, result):
+            """Aggiorna le statistiche lungo la catena dei padri."""
+            self.visits += 1
+            self.wins += result
+            if self.parent:
+                self.parent.backpropagate(result)
+
+    def search_algoritm(root_state, iterations=100):
+        root = MCTSNode(root_state)
+
+        for _ in range(iterations):
+            node = root
+
+            # Selection: scendi lungo l’albero
+            while not node.is_terminal() and node.is_fully_expanded():
+                node = node.best_child()
+
+            # Expansion: aggiungi un figlio
+            if not node.is_terminal():
+                node = node.expand()
+
+            # Simulation: gioca random fino alla fine
+            result = node.rollout()
+            # Backpropagation: aggiorna i punteggi
+            node.backpropagate(result)
+
+        # Alla fine scegli il figlio con più visite (non più alto UCB)
+        return max(root.children, key=lambda c: c.visits).state
+
+    return search_algoritm
+    """
     Returns
     -------
     GameState -> GameState
         Function that takes current GameState as input and returns the
         optimal next GameState according to the minmax search with alpha-beta pruning.
     """
-    pass

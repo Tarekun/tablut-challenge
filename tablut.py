@@ -101,11 +101,15 @@ class Board:
         string = ""
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
-                string += (
-                    "░"
-                    if self.board[row][col] == Tile.EMPTY.value
-                    else self.board[row][col][0:1]
-                )
+                value = ""
+                if self.board[row][col] == Tile.EMPTY.value:
+                    if self.is_camp(row, col):
+                        value = "C"
+                    else:
+                        value = "░"
+                else:
+                    value = self.board[row][col][0:1]
+                string += value
             string += "\n"
         return string
 
@@ -296,8 +300,7 @@ class Board:
         if pawn == Tile.EMPTY.value:
             raise ValueError(f"Tile at [{row},{col}] is empty and no pawn can be moved")
 
-        for direction in [up, down, left, right]:
-            row_change, col_change = direction
+        for row_change, col_change in [up, down, left, right]:
             for step in range(1, BOARD_LENGTH):
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
@@ -480,7 +483,7 @@ class GameState:
 
         return moves
 
-    def is_end_state(self) -> bool:
+    def is_end_state(self) -> bool | str:
         up = (1, 0)
         down = (-1, 0)
         left = (0, -1)

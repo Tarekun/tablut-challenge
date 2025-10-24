@@ -7,6 +7,7 @@ from tablut import Board, GameState, Player, Turn
 
 WHITE_PORT = 5800
 BLACK_PORT = 5801
+turn_counter = 0
 
 
 def play_turn(
@@ -30,12 +31,15 @@ def play_turn(
         return (None, game_state, move)
 
     elif turn.wins(playing_as):
+        print(f"Turni Giocati {turn_counter}")
         print(f"Endgame, {playing_as} won! Yippie")
         return (1, game_state, None)
     elif turn.wins(playing_as.complement()):
+        print(f"Turni Giocati {turn_counter}")
         print(f"Endgame, {playing_as} lost! Damn...")
         return (-1, game_state, None)
     elif turn == Turn.DRAW:
+        print(f"Turni Giocati {turn_counter}")
         print(f"Endgame, it's a draw")
         return (0, game_state, None)
 
