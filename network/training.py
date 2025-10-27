@@ -2,15 +2,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import torch
 import torch.nn.functional as F
 import random
-import subprocess
-import time
 from client import play_game, parse_state
 from tablut import Player
 from tablut import GameState
 from profiles import *
 from network.model import TablutNet
 from network.training_db import persist_self_play_run
-import threading
 import datetime
 
 
@@ -64,6 +61,49 @@ def train_step(
     Performs one training step using a batch of experiences sampled randomly from the buffer.
     """
 
+    def value_loss(batch: list[tuple[GameState, GameState, int]]):
+        states = [item[0] for item in batch]
+        outcomes = [item[2] for item in batch]
+        tensor_outcomes = torch.tensor(outcomes, dtype=torch.float32).to(
+            next(model.parameters()).device
+        )
+        values = model.value(states)
+        return loss_fn(values, tensor_outcomes)
+
+    def policy_loss(batch: list[tuple[GameState, GameState, int]]):
+        picked_moves = [item[1] for item in batch]
+        policy_groups: list[list[GameState]] = []
+        target_indices = []
+
+        for i in range(len(batch)):
+            target_move = picked_moves[i]
+            search_space: list[GameState] = batch[i][0].next_moves()
+            for j in range(len(search_space)):
+                if search_space[j] == target_move:
+                    target_indices.append(j)
+                    break
+            policy_groups.append(search_space)
+        if len(policy_groups) != len(target_indices):
+            raise Exception(
+                "Some picked actions didnt match anyone in the search space apparently:"
+                + f"len(policy_groups)={len(policy_groups)}\tlen(target_indices)={len(target_indices)}"
+            )
+
+        flat_candidates = [s for group in policy_groups for s in group]
+        group_sizes = [len(g) for g in policy_groups]
+        logits = model.train_policy(flat_candidates)
+        logits_flat = logits.view(-1)
+
+        policy_losses = []
+        start = 0
+        for i in range(len(target_indices)):
+            group_logits = logits_flat[start : start + group_sizes[i]]
+            log_probs = F.log_softmax(group_logits, dim=0)
+            policy_losses.append(-log_probs[target_indices[i]])
+            start = start + group_sizes[i]
+
+        return torch.stack(policy_losses).mean()
+
     if len(experience_buffer) < batch_size:
         raise ValueError(
             f"Eperience buffer contains only {len(experience_buffer)} samples which is less than the required {batch_size} batch size."
@@ -71,38 +111,10 @@ def train_step(
 
     # sample a random batch of experiences
     batch = random.sample(experience_buffer, batch_size)
-    states = [item[0] for item in batch]
-    picked_moves = [item[1] for item in batch]
-    outcomes = [item[2] for item in batch]
-    tensor_outcomes = torch.tensor(outcomes, dtype=torch.float32).to(
-        next(model.parameters()).device
-    )
-    policy_inputs = []
-    target_indices = []
-    for i in range(len(batch)):
-        target_move = picked_moves[i]
-        search_space = batch[i][0].next_moves()
-        # distribution = torch.zeros(len(search_space))
-        for j in range(len(search_space)):
-            if search_space[j] == target_move:
-                target_indices.append(j)
-                break
-        policy_inputs.append(search_space)
+    v_loss = value_loss(batch)
+    p_loss = policy_loss(batch)
+    total_loss = v_loss + 0.8 * p_loss
 
-    # value forward pass
-    values = model.value(states)
-    value_loss = loss_fn(values, tensor_outcomes)
-    # policy forward pass
-    logits_per_group = model.train_policy(policy_inputs)
-    policy_losses = []
-    for logits, target_idx in zip(logits_per_group, target_indices):
-        print(len(logits_per_group))
-        log_probs = F.log_softmax(logits, dim=0)
-        policy_losses.append(-log_probs[target_idx])
-    policy_loss = torch.stack(policy_losses).mean()
-
-    # backward pass and update weights
-    total_loss = value_loss + 1.0 * policy_loss
     optimizer.zero_grad()
     total_loss.backward()
     # Optional: Gradient clipping to prevent exploding gradients
@@ -130,13 +142,11 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, GameState, 
         for future in as_completed(future_to_game):
             game_num = future_to_game[future]
             try:
-                start_time = time.time()
                 analytics_record, experiences = future.result()
-                end_time = time.time()
-
                 analytics.append(analytics_record)
                 game_history.extend(experiences)
-                duration = end_time - start_time
+
+                duration = analytics_record["duration_s"]
                 total_duration += duration
                 print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
 
@@ -188,50 +198,10 @@ def _simulate_one_game(model: TablutNet):
     player = random.choice([Player.WHITE, Player.BLACK])
     player_search_name, player_search = _random_search_profile(model)
     opp_search_name, opp_search = _random_search_profile(model)
-    # experiences: list[tuple[GameState, GameState, int]] = []
 
     start_time = datetime.datetime.now()
     experiences, outcome = self_contained_game_loop(player, player_search, opp_search)
     end_time = datetime.datetime.now()
-
-    # print("Starting server...", end=" ")
-    # server = subprocess.Popen(
-    #     ["ant", "server"],
-    #     cwd="/home/danieletarek.iaisy/codice/personal/TablutCompetition/Tablut",
-    #     # cwd="C:\\Users\\danie\\codice\\uni\\TablutCompetition\\Tablut",
-    #     stdout=open("server.log", "w"),
-    #     start_new_session=True,  # detach completely
-    #     shell=True,
-    # )
-    # print("Done")
-    # time.sleep(5)
-
-    # print("Starting opponent...", end=" ")
-    # opp_results = {}
-    # opp_thread = threading.Thread(
-    #     target=_opponent_gameloop_wrapper,
-    #     args=(
-    #         player.complement(),
-    #         "opponent",
-    #         "localhost",
-    #         opp_search,
-    #         opp_results,
-    #     ),
-    # )
-    # opp_thread.start()
-    # time.sleep(1)
-    # print("Done")
-
-    # outcome, game_turns = play_game(
-    #     player, "trainee", "localhost", player_search, track=True
-    # )
-    # experiences.extend(_prepare_game_state_data(outcome, game_turns, player))
-    # opp_thread.join()
-    # opp_outcome = opp_results["outcome"]
-    # opp_game_turns = opp_results["game_turns"]
-    # experiences.extend(
-    #     _prepare_game_state_data(opp_outcome, opp_game_turns, player.complement())
-    # )
 
     analytics = {
         "trainee_player": player.value,
@@ -255,20 +225,20 @@ def _random_search_profile(
     default_top_p = 0.15
     searches = [
         ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
-        # (
-        #     "alpha_beta_value_model",
-        #     alpha_beta_value_model(model, default_depth, default_branching),
-        # ),
-        # (
-        #     "alpha_beta_policy_model",
-        #     alpha_beta_policy_model(model, default_depth, default_branching),
-        # ),
-        # (
-        #     "alpha_beta_full_model",
-        #     alpha_beta_full_model(model, default_depth, default_branching),
-        # ),
-        # ("model_value_maximization", model_value_maximization(model)),
-        # ("model_greedy_sampling", model_greedy_sampling(model)),
+        (
+            "alpha_beta_value_model",
+            alpha_beta_value_model(model, default_depth, default_branching),
+        ),
+        (
+            "alpha_beta_policy_model",
+            alpha_beta_policy_model(model, default_depth, default_branching),
+        ),
+        (
+            "alpha_beta_full_model",
+            alpha_beta_full_model(model, default_depth, default_branching),
+        ),
+        ("model_value_maximization", model_value_maximization(model)),
+        ("model_greedy_sampling", model_greedy_sampling(model)),
     ]
     return random.choice(searches)
 

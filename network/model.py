@@ -150,35 +150,3 @@ class TablutNet(nn.Module):
 
     def forward(self, game_state: GameState | list[GameState]):
         pass
-
-        if isinstance(game_state, list):
-            board, playing_as, turn_player = embed_batch_states(game_state)
-        else:
-            board, playing_as, turn_player = embed_game_state(game_state)
-            # add batch dimension for consistency
-            board = board.unsqueeze(0)
-
-        x = board.to(next(self.parameters()).device)
-
-        # --- CNN Feature Extraction ---
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
-
-        # concatenate all scalar info
-        extra_features = torch.cat([turn_player, playing_as], dim=1).to(x.device)
-        x = torch.cat((x, extra_features), dim=1)
-
-        # --- Fully Connected Head ---
-        x = F.relu(self.fc(x))
-
-        value = self.tanh(self.value_head(x)).squeeze(-1)
-        if isinstance(game_state, list):
-            policy_logits = self.policy_head(x).squeeze(-1)
-            probs = self.softmax(policy_logits)
-
-            return value, probs
-        else:
-            return value
-            # return value.squeeze(0)

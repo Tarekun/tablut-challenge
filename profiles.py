@@ -187,7 +187,6 @@ def _random_fixed_actions(num: int):
 def _heuristic_fixed_actions(num: int, heuristic):
     def implementation(state: GameState):
         moves = state.next_moves()
-        # random.shuffle(moves)
         moves.sort(key=lambda move: heuristic(move), reverse=True)
         return moves[:num]
 
