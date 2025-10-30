@@ -1,3 +1,5 @@
+from functools import reduce
+import math
 import time
 from typing import Callable
 from tablut import GameState
@@ -83,21 +85,107 @@ def alpha_beta(
 
 
 def monte_carlo_tree_search(
-    heuristic: Callable[[GameState], float],
-    stop_criterion: Callable[[GameState, int], bool],
-    move_sequence: Callable[[GameState], list[GameState]],
+    probability: Callable[[list[GameState]], list[float]],
+    rollout_to_value: Callable[[GameState], float],
+    time_limit_s: float = 55,
 ):
     """
     Monte Carlo Tree Search (MCTS) algorithm.
 
     Parameters
     ----------
-    TODO
+    probability : list[GameState] -> list[float]
+        Function that given a list of GameStates to explore returns a probability
+        distribution over those states
+    rollout_to_value : GameState -> float
+        Rollout strategy function for leaf nodes in the search process
+    time_limit_s : float
+        Time limit in seconds to iterate the search
 
     Returns
     -------
     GameState -> GameState
         Function that takes current GameState as input and returns the
-        optimal next GameState according to the minmax search with alpha-beta pruning.
+        optimal next GameState according to MCTS
     """
-    pass
+
+    class MCTSNode:
+        def __init__(self, state: GameState, parent=None):
+            self.state: GameState = state
+            self.parent: MCTSNode | None = parent
+            self._children: list[MCTSNode] | None = None
+            self.visits = 0
+            self.total_score = 0
+
+        def is_fully_expanded(self):
+            return self.visits == 0
+
+        @property
+        def children(self):
+            if self._children is None:
+                self._children = [
+                    MCTSNode(child, self) for child in self.state.next_moves()
+                ]
+
+            return self._children
+
+        def best_child(self, exp_const: float):
+            """Picks the next child to visit using PUCT score"""
+            child_states = [child.state for child in self.children]
+            probs = probability(child_states)
+            total_visits = reduce(
+                lambda total, child: total + child.visits, self.children, 0
+            )
+
+            def puct_score(node: "MCTSNode", prior: float):
+                avg_score = node.total_score / node.visits if node.visits != 0 else 0
+                u_score = (
+                    exp_const * prior * math.sqrt(total_visits) / (node.visits + 1)
+                )
+                return avg_score + u_score
+
+            best = max(
+                zip(self.children, probs),
+                key=lambda pair: puct_score(pair[0], pair[1]),
+            )
+            return best[0]
+
+        def backpropagate(self, result: float):
+            """Backpropagates the visit and the rollout result"""
+            self.visits += 1
+            self.total_score += result
+            if self.parent:
+                self.parent.backpropagate(result)
+
+    def search_algoritm(root_state: GameState) -> GameState:
+        print("MCTS called")
+        root = MCTSNode(root_state)
+        player = root_state.turn_player
+        exp_const = 2.5
+
+        start_time = time.time()
+        end_time = start_time + time_limit_s
+        print(f"start time {start_time} end time {end_time}")
+        iterations = 0
+
+        while time.time() < end_time:
+            node = root
+            # descend down the tree
+            while not node.state.is_end_state() and not node.is_fully_expanded():
+                node = node.best_child(exp_const)
+
+            if node.state.is_end_state():
+                value = 1 if node.state.winner() == player else -1
+            else:
+                value = rollout_to_value(node.state)
+
+            node.backpropagate(value)
+            # exponential annealing of the exploration constant
+            exp_const = 0.95 * exp_const
+            iterations += 1
+
+        print(f"Completed {iterations} iterations in {time_limit_s} seconds")
+        # pick the most visited child
+        return max(root.children, key=lambda c: c.visits).state
+
+    return search_algoritm

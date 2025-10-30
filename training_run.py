@@ -21,7 +21,7 @@ if __name__ == "__main__":
         optimizer,
         loss_fn,
         iterations=2,
-        games=3,
+        games=1,
         train_steps=5,
         batch_size=32,
     )

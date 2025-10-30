@@ -220,25 +220,28 @@ def _simulate_one_game(model: TablutNet):
 def _random_search_profile(
     model: TablutNet,
 ) -> tuple[str, Callable[[GameState], GameState]]:
-    default_depth = 3
-    default_branching = 5
-    default_top_p = 0.15
+    default_depth = 5
+    default_branching = 9
+
     searches = [
         ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
-        (
-            "alpha_beta_value_model",
-            alpha_beta_value_model(model, default_depth, default_branching),
-        ),
-        (
-            "alpha_beta_policy_model",
-            alpha_beta_policy_model(model, default_depth, default_branching),
-        ),
-        (
-            "alpha_beta_full_model",
-            alpha_beta_full_model(model, default_depth, default_branching),
-        ),
-        ("model_value_maximization", model_value_maximization(model)),
-        ("model_greedy_sampling", model_greedy_sampling(model)),
+        # (
+        #     "alpha_beta_value_model",
+        #     alpha_beta_value_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_policy_model",
+        #     alpha_beta_policy_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_full_model",
+        #     alpha_beta_full_model(model, default_depth, default_branching),
+        # ),
+        # ("model_value_maximization", model_value_maximization(model)),
+        # ("model_greedy_sampling", model_greedy_sampling(model)),
+        # ("mcts_fixed_model", mcts_fixed_model(model, 25, 120)),
+        # ("mcts_deep_model", mcts_deep_model(model, 120)),
+        # ("mcts_shallow_model", mcts_shallow_model(model, 120)),
     ]
     return random.choice(searches)
 
