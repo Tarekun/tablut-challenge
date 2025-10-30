@@ -41,13 +41,13 @@ def train(
         avg_loss = total_loss / train_steps if train_steps > 0 else 0
         print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
 
-        # Save model checkpoint periodically
-        # if (iteration + 1) % 100 == 0:
-        #     torch.save(
-        #         model.state_dict(),
-        #         f"tablut_model_checkpoint_iter_{iteration + 1}.pth",
-        #     )
-        #     print(f"  Model checkpoint saved at iteration {iteration + 1}")
+        # save model checkpoint periodically
+        if (iteration + 1) % 100 == 0:
+            torch.save(
+                model.state_dict(),
+                f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth",
+            )
+            print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
 
 def train_step(
@@ -225,23 +225,23 @@ def _random_search_profile(
 
     searches = [
         ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
-        # (
-        #     "alpha_beta_value_model",
-        #     alpha_beta_value_model(model, default_depth, default_branching),
-        # ),
-        # (
-        #     "alpha_beta_policy_model",
-        #     alpha_beta_policy_model(model, default_depth, default_branching),
-        # ),
-        # (
-        #     "alpha_beta_full_model",
-        #     alpha_beta_full_model(model, default_depth, default_branching),
-        # ),
-        # ("model_value_maximization", model_value_maximization(model)),
-        # ("model_greedy_sampling", model_greedy_sampling(model)),
-        # ("mcts_fixed_model", mcts_fixed_model(model, 25, 120)),
-        # ("mcts_deep_model", mcts_deep_model(model, 120)),
-        # ("mcts_shallow_model", mcts_shallow_model(model, 120)),
+        (
+            "alpha_beta_value_model",
+            alpha_beta_value_model(model, default_depth, default_branching),
+        ),
+        (
+            "alpha_beta_policy_model",
+            alpha_beta_policy_model(model, default_depth, default_branching),
+        ),
+        (
+            "alpha_beta_full_model",
+            alpha_beta_full_model(model, default_depth, default_branching),
+        ),
+        ("model_value_maximization", model_value_maximization(model)),
+        ("model_greedy_sampling", model_greedy_sampling(model)),
+        ("mcts_fixed_model", mcts_fixed_model(model, 25, 120)),
+        ("mcts_deep_model", mcts_deep_model(model, 120)),
+        ("mcts_shallow_model", mcts_shallow_model(model, 120)),
     ]
     return random.choice(searches)
 
