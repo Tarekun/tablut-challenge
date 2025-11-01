@@ -478,17 +478,4 @@ class GameState:
                         return Player.BLACK.value
                     
         return False
-    
-    def get_result(self, player: Player) -> float:
-        """
-        Restituisce risultato della partita rispetto a `player`:
-        1.0 = vittoria per `player`
-        0.0 = sconfitta per `player`
-        0.5 = pareggio / non determinato
-        """
-        winner = self.playing_as.value
-        if winner is None:
-            if self.is_end_state() or (not self.next_moves()):
-                return 0.5
-            return 0.5
-        return 1.0 if winner == player.value else 0.0
+
