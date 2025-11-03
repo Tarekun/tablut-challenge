@@ -19,6 +19,28 @@ from utils import rescale
 
 
 ################### SEARCH STRATEGIES
+def mcts_shallow_model(
+    model: TablutNet,
+    time_limit_s: float = 55,
+) -> Callable[[GameState], GameState]:
+    return monte_carlo_tree_search(model.policy, _network_value_heuristic(model))
+
+
+def mcts_fixed_model(
+    model: TablutNet,
+    max_depth: int,
+    time_limit_s: float = 55,
+) -> Callable[[GameState], GameState]:
+    return monte_carlo_tree_search(model.policy, _model_rollout(model, max_depth))
+
+
+def mcts_deep_model(
+    model: TablutNet,
+    time_limit_s: float = 55,
+) -> Callable[[GameState], GameState]:
+    return monte_carlo_tree_search(model.policy, _model_rollout(model, float("inf")))
+
+
 def alpha_beta_basic(
     max_depth: int, branching: int
 ) -> Callable[[GameState], GameState]:
@@ -111,13 +133,6 @@ def model_greedy_sampling(model: TablutNet):
 
 
 ################### SEARCH STRATEGIES
-
-
-def mcts_full_model(model: TablutNet) -> Callable[[GameState], GameState]:
-
-    return monte_carlo_tree_search(
-        _network_value_heuristic(model), _network_prob(model, top_p=1.0)
-    )
 
 
 ################### REUSABLE HEURISTICS
@@ -248,9 +263,57 @@ def _network_top_n_policy(model: TablutNet, top_n: int):
 ################### REUSABLE STOPPING CRITERIONS
 def _max_depth_criterion(max_depth: int):
     def implementation(state: GameState, depth: int) -> bool:
-        return depth > max_depth or bool(state.is_end_state())
+        return depth > max_depth or state.is_end_state()
 
     return implementation
 
 
 ################### REUSABLE STOPPING CRITERIONS
+
+
+################### REUSABLE ROLLOUT FUNCTIONS
+def _model_rollout(
+    model: TablutNet, max_depth: int | float
+) -> Callable[[GameState], float]:
+    def implementation(root_state: GameState) -> float:
+        state = root_state
+        depth: int = 0
+
+        with torch.no_grad():
+            while depth < max_depth and not state.is_end_state():
+                search_space = state.next_moves()
+                probs = model.policy(search_space)
+                move_idx = torch.multinomial(probs, num_samples=1).item()
+
+                state = search_space[int(move_idx)]
+                depth += 1
+
+            if state.is_end_state():
+                return 1 if state.winner() == root_state.turn_player else -1
+            else:
+                return model.value(state)
+
+    return implementation
+
+
+def _random_fixed_depth_rollout(heuristic, max_depth: int | float):
+    def implementation(root_state: GameState) -> float:
+        state = root_state
+        depth: int = 0
+
+        while depth < max_depth and not state.is_end_state():
+            search_space = state.next_moves()
+            move_idx = random.choice(len(search_space))
+
+            state = search_space[move_idx]
+            depth += 1
+
+        if state.is_end_state():
+            return 1 if state.winner() == root_state.turn_player else -1
+        else:
+            return heuristic(state)
+
+    return implementation
+
+
+################### REUSABLE ROLLOUT FUNCTIONS

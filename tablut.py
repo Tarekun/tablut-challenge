@@ -505,7 +505,7 @@ class GameState:
 
         return moves
 
-    def is_end_state(self) -> bool | str:
+    def is_end_state(self) -> bool:
         up = (1, 0)
         down = (-1, 0)
         left = (0, -1)

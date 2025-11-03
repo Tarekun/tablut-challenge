@@ -1,5 +1,5 @@
 import sys
-from profiles import alpha_beta_basic, mcts_full_model
+from profiles import alpha_beta_basic
 from client import play_game
 from tablut import Player
 
@@ -20,5 +20,5 @@ else:
         f"Invalid player. Must be either 'white' or 'black', not {player_input}."
     )
 
-search = alpha_beta_basic(4, 20)  # Replace None with your trained model
+search = alpha_beta_basic(4, 30)
 play_game(player, "MyPythonBot", server_ip, search)

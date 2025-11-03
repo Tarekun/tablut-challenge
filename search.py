@@ -1,3 +1,4 @@
+from functools import reduce
 import math
 import random
 import time
@@ -85,87 +86,111 @@ def alpha_beta(
 
 
 def monte_carlo_tree_search(
-    heuristic: Callable[[GameState], float],  # heuristic
-    probability: Callable[[list[GameState]], list[float]],  # policy
+    probability: Callable[[list[GameState]], list[float]],
+    rollout_to_value: Callable[[GameState], float],
+    time_limit_s: float = 55,
 ):
     """
     Monte Carlo Tree Search (MCTS) algorithm.
 
     Parameters
     ----------
+    probability : list[GameState] -> list[float]
+        Function that given a list of GameStates to explore returns a probability
+        distribution over those states
+    rollout_to_value : GameState -> float
+        Rollout strategy function for leaf nodes in the search process
+    time_limit_s : float
+        Time limit in seconds to iterate the search
+
+    Returns
+    -------
+    GameState -> GameState
+        Function that takes current GameState as input and returns the
+        optimal next GameState according to MCTS
     """
 
     class MCTSNode:
         def __init__(self, state: GameState, parent=None):
             self.state: GameState = state
             self.parent: MCTSNode | None = parent
-            self.children: list[MCTSNode] = []
+            self._children: list[MCTSNode] | None = None
             self.visits = 0
-            self.wins = 0
-            self.untried_states = self.state.next_moves()
+            self.total_score = 0
 
         def is_terminal(self):
             """Restituisce True se la partita è finita."""
             return self.state.is_end_state()
 
         def is_fully_expanded(self):
-            return len(self.untried_states) == 0 and len(self.children) > 0
+            return self.visits == 0
 
-        def expand(self):
-            child_probs = probability(self.untried_states)
-            # campiona o prendi il max
-            new_state = random.choices(self.untried_states, weights=child_probs, k=1)[0]
-            self.untried_states.remove(new_state)
-            child = MCTSNode(new_state, parent=self)
-            self.children.append(child)
-            return child
+        @property
+        def children(self):
+            if self._children is None:
+                self._children = [
+                    MCTSNode(child, self) for child in self.state.next_moves()
+                ]
 
-        def best_child(self, c_puct=1.4):
+            return self._children
+
+        def best_child(self, exp_const: float):
+            """Picks the next child to visit using PUCT score"""
             child_states = [child.state for child in self.children]
             probs = probability(child_states)
-            total_visits = sum(child.visits for child in self.children) + 1
+            total_visits = reduce(
+                lambda total, child: total + child.visits, self.children, 0
+            )
 
-            def uct_value(child, p):
-                q = child.wins / (child.visits + 1e-6)
-                u = c_puct * p * math.sqrt(total_visits) / (1 + child.visits)
-                return q + u
+            def puct_score(node: "MCTSNode", prior: float):
+                avg_score = node.total_score / node.visits if node.visits != 0 else 0
+                u_score = (
+                    exp_const * prior * math.sqrt(total_visits) / (node.visits + 1)
+                )
+                return avg_score + u_score
 
-            best = max(zip(self.children, probs), key=lambda pair: uct_value(*pair))
+            best = max(
+                zip(self.children, probs),
+                key=lambda pair: puct_score(pair[0], pair[1]),
+            )
             return best[0]
 
-        def rollout(self, max_depth=None):
-            """Simula il valore dello stato tramite euristica"""
-            return heuristic(self.state)
-
-        def backpropagate(self, result):
-            """Aggiorna le statistiche lungo la catena dei padri."""
+        def backpropagate(self, result: float):
+            """Backpropagates the visit and the rollout result"""
             self.visits += 1
-            self.wins += result
+            self.total_score += result
             if self.parent:
-                self.parent.backpropagate(-result)
+                self.parent.backpropagate(result)
 
-    def search_algoritm(root_state, max_seconds=50):
+    def search_algoritm(root_state: GameState) -> GameState:
+        print("MCTS called")
         root = MCTSNode(root_state)
+        player = root_state.turn_player
+        exp_const = 2.5
 
         start_time = time.time()
+        end_time = start_time + time_limit_s
+        print(f"start time {start_time} end time {end_time}")
+        iterations = 0
 
-        while time.time() - start_time < max_seconds:
+        while time.time() < end_time:
             node = root
+            # descend down the tree
+            while not node.state.is_end_state() and not node.is_fully_expanded():
+                node = node.best_child(exp_const)
 
-            # Selection: scendi lungo l’albero
-            while not node.is_terminal() and node.is_fully_expanded():
-                node = node.best_child()
+            if node.state.is_end_state():
+                value = 1 if node.state.winner() == player else -1
+            else:
+                value = rollout_to_value(node.state)
 
-            # Expansion: aggiungi un figlio
-            if not node.is_terminal():
-                node = node.expand()
+            node.backpropagate(value)
+            # exponential annealing of the exploration constant
+            exp_const = 0.95 * exp_const
+            iterations += 1
 
-            # Simulation: gioca random fino alla fine
-            result = node.rollout()
-            # Backpropagation: aggiorna i punteggi
-            node.backpropagate(result)
-
-        # Alla fine scegli il figlio con più visite (non più alto UCB)
+        print(f"Completed {iterations} iterations in {time_limit_s} seconds")
+        # pick the most visited child
         return max(root.children, key=lambda c: c.visits).state
 
     return search_algoritm
