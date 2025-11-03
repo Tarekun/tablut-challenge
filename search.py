@@ -135,14 +135,17 @@ def monte_carlo_tree_search(
             return self._children
 
         def best_child(self, exp_const: float):
-            """Picks the next child to visit using PUCT score"""
-            child_states = [child.state for child in self.children]
+            child_states = [
+                child.state
+                for child in self.children
+                if self.is_fully_expanded() or child.visits == 0
+            ]
+
             probs = probability(child_states)
-            total_visits = reduce(
-                lambda total, child: total + child.visits, self.children, 0
-            )
 
             def puct_score(node: "MCTSNode", prior: float):
+                total_visits = sum(child.visits for child in self.children)
+
                 avg_score = node.total_score / node.visits if node.visits != 0 else 0
                 u_score = (
                     exp_const * prior * math.sqrt(total_visits) / (node.visits + 1)
@@ -151,7 +154,11 @@ def monte_carlo_tree_search(
 
             best = max(
                 zip(self.children, probs),
-                key=lambda pair: puct_score(pair[0], pair[1]),
+                key=lambda pair: (
+                    puct_score(pair[0], pair[1])
+                    if self.is_fully_expanded()
+                    else pair[1]
+                ),
             )
             return best[0]
 
@@ -176,7 +183,7 @@ def monte_carlo_tree_search(
         while time.time() < end_time:
             node = root
             # descend down the tree
-            while not node.state.is_end_state() and not node.is_fully_expanded():
+            while not node.state.is_end_state() and not node.visits == 0:
                 node = node.best_child(exp_const)
 
             if node.state.is_end_state():
