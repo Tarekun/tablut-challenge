@@ -505,16 +505,17 @@ class GameState:
 
         return moves
 
-    def is_end_state(self) -> bool:
-        up = (1, 0)
-        down = (-1, 0)
-        left = (0, -1)
-        right = (0, 1)
-
-        # self.board.solve_captures()
+    def winner(self) -> Player | None:
         row, col = self.board.king_position()
         if row is None or col is None:
             # king was captured
-            return True
-        else:
-            return self.board.is_escape(row, col)
+            return Player.BLACK
+        elif self.board.is_escape(row, col):
+            # king escaped
+            return Player.WHITE
+        elif self.board.king_surr() == 4:
+            # king is cornered
+            return Player.BLACK
+
+    def is_end_state(self) -> bool:
+        return self.winner() is not None

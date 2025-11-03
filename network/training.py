@@ -3,8 +3,7 @@ import torch
 import torch.nn.functional as F
 import random
 from client import play_game, parse_state
-from tablut import Player
-from tablut import GameState
+from tablut import Board, GameState, Player
 from profiles import *
 from network.model import TablutNet
 from network.training_db import persist_self_play_run
@@ -249,29 +248,29 @@ def _random_search_profile(
 def _prepare_game_state_data(
     outcome: int, game_turns: list[tuple[GameState, GameState]], playing_as: Player
 ) -> list[tuple[GameState, GameState, int]]:
+    def transform_state(board: Board, next_board: Board):
+        pairs = []
+        seen = set()
+
+        for k in range(4):
+            rot_state = np.rot90(board.board, k=k)
+            rot_next = np.rot90(next_board.board, k=k)
+
+            for s, n in [
+                (rot_state, rot_next),
+                # TODO da rivedere
+                (np.fliplr(rot_state), np.fliplr(rot_next)),
+            ]:
+                key = s.tobytes() + n.tobytes()
+                if key not in seen:
+                    seen.add(key)
+                    pairs.append((s, n))
+
+        return pairs
 
     game_history: list[tuple[GameState, GameState, int]] = []
     for state, move in game_turns:
         outcome = outcome if state.turn_player == playing_as else -1 * outcome
-
-        def transform_state(state, next_state):
-            pairs = []
-            seen = set()
-
-            for k in range(4):
-                rot_state = np.rot90(state, k=k)
-                rot_next = np.rot90(next_state, k=k)
-
-                for s, n in [
-                    (rot_state, rot_next),
-                    (np.fliplr(rot_state), np.fliplr(rot_next)),
-                ]:
-                    key = s.tobytes() + n.tobytes()
-                    if key not in seen:
-                        seen.add(key)
-                        pairs.append((s, n))
-
-            return pairs
 
         for s, n in transform_state(state.board, move.board):
             s = GameState.clone_state_from_board(state, s)
