@@ -104,9 +104,19 @@ class Board:
                 value = ""
                 if self.board[row][col] == Tile.EMPTY.value:
                     if self.is_camp(row, col):
-                        value = "C"
+                        value = "▫"
+                    elif self.is_escape(row, col):
+                        value = "█"
+                    elif self.is_throne(row, col):
+                        value = "▪"
                     else:
                         value = "░"
+                elif self.board[row][col] == Tile.KING.value:
+                    value = "♣"
+                elif self.board[row][col] == Tile.WHITE.value:
+                    value = "♠"
+                elif self.board[row][col] == Tile.BLACK.value:
+                    value = "♤"
                 else:
                     value = self.board[row][col][0:1]
                 string += value
@@ -300,7 +310,8 @@ class Board:
         if pawn == Tile.EMPTY.value:
             raise ValueError(f"Tile at [{row},{col}] is empty and no pawn can be moved")
 
-        for row_change, col_change in [up, down, left, right]:
+        for direction in [up, down, left, right]:
+            row_change, col_change = direction
             for step in range(1, BOARD_LENGTH):
                 moved_row = row + (step * row_change)
                 moved_col = col + (step * col_change)
@@ -435,6 +446,17 @@ class GameState:
         self._turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
         self._turn = turn
         self._turn_num = turn_num
+
+    @classmethod
+    def clone_state_from_board(
+        cls, parent_state: "GameState", board: Board
+    ) -> "GameState":
+        return cls(
+            board=board,
+            playing_as=parent_state.playing_as,
+            turn=parent_state.turn,
+            turn_num=parent_state.turn_num,
+        )
 
     def __str__(self) -> str:
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}"
