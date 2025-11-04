@@ -101,11 +101,25 @@ class Board:
         string = ""
         for row in range(BOARD_LENGTH):
             for col in range(BOARD_LENGTH):
-                string += (
-                    "░"
-                    if self.board[row][col] == Tile.EMPTY.value
-                    else self.board[row][col][0:1]
-                )
+                value = ""
+                if self.board[row][col] == Tile.EMPTY.value:
+                    if self.is_camp(row, col):
+                        value = "▫"
+                    elif self.is_escape(row, col):
+                        value = "█"
+                    elif self.is_throne(row, col):
+                        value = "▪"
+                    else:
+                        value = "░"
+                elif self.board[row][col] == Tile.KING.value:
+                    value = "♣"
+                elif self.board[row][col] == Tile.WHITE.value:
+                    value = "♠"
+                elif self.board[row][col] == Tile.BLACK.value:
+                    value = "♤"
+                else:
+                    value = self.board[row][col][0:1]
+                string += value
             string += "\n"
         return string
 
@@ -433,6 +447,17 @@ class GameState:
         self._turn = turn
         self._turn_num = turn_num
 
+    @classmethod
+    def clone_state_from_board(
+        cls, parent_state: "GameState", board: Board
+    ) -> "GameState":
+        return cls(
+            board=board,
+            playing_as=parent_state.playing_as,
+            turn=parent_state.turn,
+            turn_num=parent_state.turn_num,
+        )
+
     def __str__(self) -> str:
         header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}"
         return f"{header}\n{self.board}"
@@ -480,16 +505,17 @@ class GameState:
 
         return moves
 
-    def is_end_state(self) -> bool:
-        up = (1, 0)
-        down = (-1, 0)
-        left = (0, -1)
-        right = (0, 1)
-
-        # self.board.solve_captures()
+    def winner(self) -> Player | None:
         row, col = self.board.king_position()
         if row is None or col is None:
             # king was captured
-            return True
-        else:
-            return self.board.is_escape(row, col)
+            return Player.BLACK
+        elif self.board.is_escape(row, col):
+            # king escaped
+            return Player.WHITE
+        elif self.board.king_surr() == 4:
+            # king is cornered
+            return Player.BLACK
+
+    def is_end_state(self) -> bool:
+        return self.winner() is not None

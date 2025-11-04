@@ -10,8 +10,8 @@ import time
 
 
 if __name__ == "__main__":
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cpu")
     model = TablutNet().to(device)
     optimizer = Adam(model.parameters(), lr=1e-4)
     loss_fn = MSELoss()
@@ -20,10 +20,10 @@ if __name__ == "__main__":
         model,
         optimizer,
         loss_fn,
-        iterations=2,
-        games=3,
-        train_steps=5,
-        batch_size=32,
+        iterations=3,
+        games=5,
+        train_steps=10,
+        batch_size=50,
     )
     print("Model and trainer initialized.")
     print(

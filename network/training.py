@@ -3,8 +3,7 @@ import torch
 import torch.nn.functional as F
 import random
 from client import play_game, parse_state
-from tablut import Player
-from tablut import GameState
+from tablut import Board, GameState, Player
 from profiles import *
 from network.model import TablutNet
 from network.training_db import persist_self_play_run
@@ -41,13 +40,13 @@ def train(
         avg_loss = total_loss / train_steps if train_steps > 0 else 0
         print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
 
-        # Save model checkpoint periodically
-        # if (iteration + 1) % 100 == 0:
-        #     torch.save(
-        #         model.state_dict(),
-        #         f"tablut_model_checkpoint_iter_{iteration + 1}.pth",
-        #     )
-        #     print(f"  Model checkpoint saved at iteration {iteration + 1}")
+        # save model checkpoint periodically
+        if (iteration + 1) % 100 == 0:
+            torch.save(
+                model.state_dict(),
+                f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth",
+            )
+            print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
 
 def train_step(
@@ -220,9 +219,9 @@ def _simulate_one_game(model: TablutNet):
 def _random_search_profile(
     model: TablutNet,
 ) -> tuple[str, Callable[[GameState], GameState]]:
-    default_depth = 3
-    default_branching = 5
-    default_top_p = 0.15
+    default_depth = 5
+    default_branching = 9
+
     searches = [
         ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
         (
@@ -239,6 +238,9 @@ def _random_search_profile(
         ),
         ("model_value_maximization", model_value_maximization(model)),
         ("model_greedy_sampling", model_greedy_sampling(model)),
+        ("mcts_fixed_model", mcts_fixed_model(model, 25, 120)),
+        ("mcts_deep_model", mcts_deep_model(model, 120)),
+        ("mcts_shallow_model", mcts_shallow_model(model, 120)),
     ]
     return random.choice(searches)
 
@@ -246,10 +248,34 @@ def _random_search_profile(
 def _prepare_game_state_data(
     outcome: int, game_turns: list[tuple[GameState, GameState]], playing_as: Player
 ) -> list[tuple[GameState, GameState, int]]:
+    def transform_state(board: Board, next_board: Board):
+        pairs = []
+        seen = set()
+
+        for k in range(4):
+            rot_state = np.rot90(board.board, k=k)
+            rot_next = np.rot90(next_board.board, k=k)
+
+            for s, n in [
+                (rot_state, rot_next),
+                # TODO da rivedere
+                (np.fliplr(rot_state), np.fliplr(rot_next)),
+            ]:
+                key = s.tobytes() + n.tobytes()
+                if key not in seen:
+                    seen.add(key)
+                    pairs.append((s, n))
+
+        return pairs
+
     game_history: list[tuple[GameState, GameState, int]] = []
     for state, move in game_turns:
         outcome = outcome if state.turn_player == playing_as else -1 * outcome
-        game_history.append((state, move, outcome))
+
+        for s, n in transform_state(state.board, move.board):
+            s = GameState.clone_state_from_board(state, s)
+            n = GameState.clone_state_from_board(move, n)
+            game_history.append((s, n, outcome))
 
     return game_history
 

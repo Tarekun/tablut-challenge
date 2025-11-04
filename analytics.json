@@ -1,0 +1,35 @@
+[
+  {
+    "trainee_player": "WHITE",
+    "trainee_strategy": "alpha_beta_basic",
+    "trainee_outcome": 0,
+    "opp_player": "BLACK",
+    "opp_strategy": "alpha_beta_basic",
+    "opp_outcome": 0,
+    "start_time": "2025-10-24 13:14:28.078375",
+    "end_time": "2025-10-24 13:14:28.078572",
+    "duration_s": 0.000197
+  },
+  {
+    "trainee_player": "BLACK",
+    "trainee_strategy": "alpha_beta_basic",
+    "trainee_outcome": 0,
+    "opp_player": "WHITE",
+    "opp_strategy": "alpha_beta_basic",
+    "opp_outcome": 0,
+    "start_time": "2025-10-24 13:14:42.408859",
+    "end_time": "2025-10-24 14:06:34.957439",
+    "duration_s": 3112.54858
+  },
+  {
+    "trainee_player": "BLACK",
+    "trainee_strategy": "alpha_beta_basic",
+    "trainee_outcome": 0,
+    "opp_player": "WHITE",
+    "opp_strategy": "alpha_beta_basic",
+    "opp_outcome": 0,
+    "start_time": "2025-10-24 15:00:01.385248",
+    "end_time": "2025-10-24 15:06:23.919334",
+    "duration_s": 382.534086
+  }
+]
