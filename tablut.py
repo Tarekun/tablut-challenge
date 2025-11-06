@@ -246,9 +246,9 @@ class Board:
             valid_ally = (
                 moved_pawn == ally_pawn
                 or (
-                    ally_pawn == Tile.EMPTY.value and self.is_throne(ally_row, ally_col)
+                    self.is_throne(ally_row, ally_col)
                 )
-                or (ally_pawn == Tile.EMPTY.value and self.is_camp(ally_row, ally_col))
+                or self.is_camp(ally_row, ally_col)
             )
             valid_enemy = (
                 (moved_pawn == Tile.WHITE.value or moved_pawn == Tile.KING.value)
