@@ -3,6 +3,7 @@ import math
 import time
 from typing import Callable
 from tablut import GameState
+import random
 
 
 def alpha_beta(
@@ -124,7 +125,7 @@ def monte_carlo_tree_search(
         def children(self):
             if self._children is None:
                 self._children = [
-                    MCTSNode(child, self) for child in self.state.next_moves()
+                    MCTSNode(child, self) for child in random.shuffle(self.state.next_moves()) #type: ignore
                 ]
 
             return self._children

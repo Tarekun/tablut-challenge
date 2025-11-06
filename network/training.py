@@ -14,8 +14,8 @@ def train(
     model: TablutNet,
     optimizer,
     loss_fn,
-    iterations: int,
-    games: int = 1,
+    iterations: int = 3,
+    games: int = 5,
     train_steps: int = 1,
     batch_size: int = 32,
 ):
@@ -45,7 +45,7 @@ def train(
         if (iteration + 1) % 2 == 0:
             torch.save(
                 model.state_dict(),
-                f"checkpoints/tablut_model_checkpoint_iter.pth",
+                f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth",
             )
             print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
@@ -252,11 +252,12 @@ def _prepare_game_state_data(
     def transform_state(board: Board, next_board: Board):
         pairs = []
         seen = set()
-
+        # Rotate k times and flip horizontally to augment data
         for k in range(4):
             rot_state = np.rot90(board.board, k=k)
             rot_next = np.rot90(next_board.board, k=k)
 
+            # Check if we've already seen this transformation
             for s, n in [
                 (rot_state, rot_next),
                 # TODO da rivedere

@@ -125,8 +125,7 @@ class TablutNet(nn.Module):
         residual = x
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.bn3(self.conv3(x))
-        # print(f"Residual: {self.downsample(residual).shape}")
-        # print(f"X: {x.shape}")
+
         if self.res:
             x += self.downsample(residual)
 
