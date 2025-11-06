@@ -69,8 +69,10 @@ def embed_batch_states(
 
 
 class TablutNet(nn.Module):
-    def __init__(self, in_channels: int = 3):
+    def __init__(self, in_channels: int = 3, res: bool = False):
         super().__init__()
+        
+        self.res = res
 
         conv_filters = [in_channels, 32, 64, 128]
         kernel_size = 3
@@ -90,6 +92,7 @@ class TablutNet(nn.Module):
         self.conv3 = nn.Conv2d(
             conv_filters[2], conv_filters[3], kernel_size, padding=padding
         )
+        # Residual Connection
         self.downsample = nn.Sequential(
             nn.Conv2d(conv_filters[1], conv_filters[3], kernel_size=1),
             nn.BatchNorm2d(conv_filters[3])
@@ -124,8 +127,9 @@ class TablutNet(nn.Module):
         x = self.bn3(self.conv3(x))
         # print(f"Residual: {self.downsample(residual).shape}")
         # print(f"X: {x.shape}")
-        
-        x += self.downsample(residual)
+        if self.res:
+            x += self.downsample(residual)
+
         x = F.relu(x)
         x = x.view(x.size(0), -1)
 
