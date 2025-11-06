@@ -163,7 +163,7 @@ def monte_carlo_tree_search(
 
         start_time = time.time()
         end_time = start_time + time_limit_s
-        print(f"start time {start_time} end time {end_time}")
+        print(f"start time {start_time} end time {end_time}, execution time: {end_time - start_time}")
         iterations = 0
 
         while time.time() < end_time:

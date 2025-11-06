@@ -82,12 +82,20 @@ class TablutNet(nn.Module):
         self.conv1 = nn.Conv2d(
             conv_filters[0], conv_filters[1], kernel_size, padding=padding
         )
+        self.bn1 = nn.BatchNorm2d(conv_filters[1])
         self.conv2 = nn.Conv2d(
             conv_filters[1], conv_filters[2], kernel_size, padding=padding
         )
+        self.bn2 = nn.BatchNorm2d(conv_filters[2])
         self.conv3 = nn.Conv2d(
             conv_filters[2], conv_filters[3], kernel_size, padding=padding
         )
+        self.downsample = nn.Sequential(
+            nn.Conv2d(conv_filters[1], conv_filters[3], kernel_size=1),
+            nn.BatchNorm2d(conv_filters[3])
+        )
+        self.bn3 = nn.BatchNorm2d(conv_filters[3])
+
 
         # FCL head
         extra_features = 2 * 2  # 2 features 1-hot-encoded to a 2 dimensional vector
@@ -110,9 +118,15 @@ class TablutNet(nn.Module):
             board = board.unsqueeze(0)  # add batch dimension for consistency
 
         x = board.to(next(self.parameters()).device)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
+        x = F.relu(self.bn1(self.conv1(x)))
+        residual = x
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.bn3(self.conv3(x))
+        # print(f"Residual: {self.downsample(residual).shape}")
+        # print(f"X: {x.shape}")
+        
+        x += self.downsample(residual)
+        x = F.relu(x)
         x = x.view(x.size(0), -1)
 
         extra_features = torch.cat([turn_player, playing_as], dim=1).to(x.device)

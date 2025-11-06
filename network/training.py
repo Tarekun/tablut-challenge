@@ -24,6 +24,7 @@ def train(
     moves in a experience buffer. Each iteration it run `train_steps` training steps where it samples randomly
     `batch_size` actions from the experience buffer and performs gradient optimization on those samples
     """
+    
     for iteration in range(iterations):
         print(f"Starting Iteration {iteration + 1}/{iterations}")
         print(f"\tRunning {games} self-play games...")
@@ -41,10 +42,10 @@ def train(
         print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
 
         # save model checkpoint periodically
-        if (iteration + 1) % 100 == 0:
+        if (iteration + 1) % 2 == 0:
             torch.save(
                 model.state_dict(),
-                f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth",
+                f"checkpoints/tablut_model_checkpoint_iter.pth",
             )
             print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
@@ -175,7 +176,7 @@ def self_contained_game_loop(
 
     print(f"Running self play game with player {player}")
     while not game_state.is_end_state():
-        print(game_state)
+        print(f"\n{game_state}")
         turn_search = player_search if player == game_state.turn_player else opp_search
         move = turn_search(game_state)
         experience_buffer.append((game_state, move))
