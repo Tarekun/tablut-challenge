@@ -82,7 +82,12 @@ def parse_state(
     """Parses the JSON string of the game state provided by the server. playing_as is optional
     and if left unspecified will be set to the turn player"""
 
-    state = json.loads(json_string)
+    return create_dict_state(json.loads(json_string))
+
+
+def create_dict_state(
+    state: dict, playing_as: Player | None = None
+) -> tuple[GameState, Turn]:
     turn = None
     for member in Turn:
         if member.value == state["turn"]:
