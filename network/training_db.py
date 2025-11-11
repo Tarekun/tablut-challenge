@@ -1,6 +1,7 @@
 from datetime import datetime
 import glob
-from tablut import GameState
+import numpy as np
+from tablut import GameState, Board
 from client import create_dict_state
 import os
 import json
@@ -46,8 +47,8 @@ def latest_experiences() -> list[tuple[GameState, GameState, int]]:
     files.sort(reverse=True)
     latest_files = files[:5]
     latest_files.append("trainruns/handcraftedExperiences.json")
-    print(f"reading {latest_files}")
 
+    # fetch some experiences from the db
     all_experiences: list[tuple[GameState, GameState, int]] = []
     for file in latest_files:
         with open(file, "r") as f:
@@ -60,8 +61,40 @@ def latest_experiences() -> list[tuple[GameState, GameState, int]]:
                         exp["outcome"],
                     )
                 )
+    # augment experiences by symmetries
+    augmented_experiences = []
+    for state, move, outcome in all_experiences:
+        augmented_experiences.extend(transform_state(state, move, outcome))
 
-    return all_experiences
+    return augmented_experiences
+
+
+def transform_state(
+    state: GameState, move: GameState, outcome: int
+) -> list[tuple[GameState, GameState, int]]:
+    pairs = []
+    seen = set()
+    # rotate and flip horizontally 4 times
+    for k in range(4):
+        rot_state = np.rot90(state.board.board, k=k)
+        rot_next = np.rot90(move.board.board, k=k)
+
+        for s, m in [
+            (rot_state, rot_next),
+            (np.fliplr(rot_state), np.fliplr(rot_next)),
+        ]:
+            key = s.tobytes() + m.tobytes()
+            if key not in seen:
+                seen.add(key)
+                symmetric_state = GameState(
+                    Board(s.tolist()), state.playing_as, state.turn
+                )
+                symmetric_move = GameState(
+                    Board(m.tolist()), move.playing_as, move.turn
+                )
+                pairs.append((symmetric_state, symmetric_move, outcome))
+
+    return pairs
 
 
 def persist_self_play_run(

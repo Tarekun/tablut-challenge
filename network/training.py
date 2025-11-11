@@ -31,10 +31,6 @@ def train(
     for iteration in range(iterations):
         print(f"Starting Iteration {iteration + 1}/{iterations}")
 
-        # self playing the game
-        print(f"\tRunning {games} self-play games...")
-        run_self_play_games(model, num_games=games)
-
         # training on past experiences
         print(
             f"\tOptimizing model for {train_steps} steps with batch size of {batch_size}..."
@@ -54,6 +50,10 @@ def train(
                 f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth",
             )
             print(f"  Model checkpoint saved at iteration {iteration + 1}")
+
+        # self playing the game
+        print(f"\tRunning {games} self-play games...")
+        run_self_play_games(model, num_games=games)
 
 
 def train_step(
@@ -83,11 +83,18 @@ def train_step(
         for i in range(len(batch)):
             target_move = picked_moves[i]
             search_space: list[GameState] = batch[i][0].next_moves()
+            found = False
             for j in range(len(search_space)):
                 if search_space[j] == target_move:
                     target_indices.append(j)
+                    found = True
                     break
             policy_groups.append(search_space)
+            if not found:
+                print(batch[i][0])
+                print(batch[i][0].board.board, end="\n\n\n")
+                print(target_move)
+                print(target_move.board.board, end="\n\n\n")
         if len(policy_groups) != len(target_indices):
             raise Exception(
                 "Some picked actions didnt match anyone in the search space apparently:"
@@ -192,7 +199,7 @@ def self_contained_game_loop(
         turn += 1
 
     print(f"finished game on state\n{game_state}")
-    if game_state.winner(player) == player:
+    if game_state.winner() == player:
         outcome = 1
     elif game_state.winner() == player.complement():
         outcome = -1
@@ -281,7 +288,7 @@ def _random_search_profile(
     model: TablutNet,
 ) -> tuple[str, Callable[[GameState], GameState]]:
     default_depth = 5
-    default_branching = 9
+    default_branching = 10
 
     searches = [
         ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
@@ -309,27 +316,6 @@ def _random_search_profile(
 def _prepare_game_state_data(
     outcome: int, game_turns: list[tuple[GameState, GameState]], playing_as: Player
 ) -> list[tuple[GameState, GameState, int]]:
-    def transform_state(board: Board, next_board: Board):
-        pairs = []
-        seen = set()
-        # Rotate k times and flip horizontally to augment data
-        for k in range(4):
-            rot_state = np.rot90(board.board, k=k)
-            rot_next = np.rot90(next_board.board, k=k)
-
-            # Check if we've already seen this transformation
-            for s, n in [
-                (rot_state, rot_next),
-                # TODO da rivedere
-                (np.fliplr(rot_state), np.fliplr(rot_next)),
-            ]:
-                key = s.tobytes() + n.tobytes()
-                if key not in seen:
-                    seen.add(key)
-                    pairs.append((s, n))
-
-        return pairs
-
     game_history: list[tuple[GameState, GameState, int]] = []
     for state, move in game_turns:
         outcome = outcome if state.turn_player == playing_as else -1 * outcome
