@@ -438,12 +438,13 @@ class Board:
 
 
 class GameState:
-    def __init__(self, board: Board, playing_as: Player, turn: Turn, turn_num=0):
+    def __init__(self, board: Board, playing_as: Player, turn: Turn, previous = None, turn_num=0):
         self._board = board
         self._playing_as = playing_as
         self._turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
         self._turn = turn
         self._turn_num = turn_num
+        self._previous = previous
 
     @classmethod
     def clone_state_from_board(
@@ -482,6 +483,10 @@ class GameState:
     @property
     def turn_num(self) -> int:
         return self._turn_num
+    
+    @property
+    def previous(self):
+        return self._previous
 
     def next_moves(self):
         moves = []
@@ -496,6 +501,7 @@ class GameState:
                                 self.playing_as,
                                 self.turn.complement(),
                                 turn_num=self.turn_num + 1,
+                                previous = self
                             )
                             for move in pawn_moves
                         ]
@@ -503,7 +509,15 @@ class GameState:
 
         return moves
 
-    def winner(self) -> Player | None:
+    def winner(self) -> Player | None | str:
+        previous = self.previous
+        for _ in range(3):
+            if previous is None:
+                break
+            previous = previous.previous
+
+        if previous and self.board.board == previous.board.board:
+            return "DRAW"
         row, col = self.board.king_position()
         if row is None or col is None:
             # king was captured

@@ -295,7 +295,12 @@ def _model_rollout(
                 depth += 1
 
             if state.is_end_state():
-                return 1 if state.winner() == root_state.turn_player else -1
+                if state.winner() == root_state.turn_player:
+                    return 1
+                elif state.winner() == "DRAW":
+                    return 0
+                else:
+                    return -1
             else:
                 return model.value(state)
 
@@ -315,7 +320,12 @@ def _random_fixed_depth_rollout(heuristic, max_depth: int | float):
             depth += 1
 
         if state.is_end_state():
-            return 1 if state.winner() == root_state.turn_player else -1
+            if state.winner() == root_state.turn_player:
+                return 1
+            elif state.winner() == "DRAW":
+                return 0
+            else:
+                return -1
         else:
             return heuristic(state)
 

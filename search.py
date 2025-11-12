@@ -174,7 +174,12 @@ def monte_carlo_tree_search(
                 node = node.best_child(exp_const)
 
             if node.state.is_end_state():
-                value = 1 if node.state.winner() == player else -1
+                if node.state.winner() == root_state.turn_player:
+                    value = 1
+                elif node.state.winner() == "DRAW":
+                    value = 0
+                else:
+                    value = -1
             else:
                 value = rollout_to_value(node.state)
 
