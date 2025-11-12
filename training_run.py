@@ -1,15 +1,10 @@
-import os
-from utils import flag_manager
-from client import parse_state
-from tablut import GameState, Player
-from network.training import run_self_play_games, train
+from utils import flag_manager, get_latest_checkpoint
+from network.training import train
 from network.model import TablutNet
 import torch.utils.benchmark as benchmark
 import torch
 from torch.optim import Adam
 from torch.nn import MSELoss
-import time
-import argparse
 
 
 if __name__ == "__main__":
@@ -18,15 +13,13 @@ if __name__ == "__main__":
     # device = torch.device("cpu")
     print(f"running on {device}")
     model = TablutNet(res=res).to(device)
-    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_2.pth"
-    model.load_state_dict(torch.load(checkpoint_path))
     optimizer = Adam(model.parameters(), lr=1e-4)
-    path = "checkpoints/tablut_model_checkpoint_iter.pth"
-    if os.path.isfile(path):
-        print(f"Loading Checkpoint")
-        checkpoint = torch.load("path")
-        model.load_state_dict(checkpoint["state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer"])
+    path = get_latest_checkpoint("checkpoints", prefix = "tablut_model_checkpoint_iter_", ext = ".pth")  
+    if path:
+        print(f"Loading Checkpoint {path}")
+        checkpoint = torch.load(path)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     loss_fn = MSELoss()
 
     train(

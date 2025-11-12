@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
 import random
 import subprocess
 import threading
@@ -45,10 +46,12 @@ def train(
         print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
         # save model checkpoint periodically
         if (iteration + 1) % 2 == 0:
-            torch.save(
-                model.state_dict(),
-                f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth",
-            )
+            save_path = f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth"
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            torch.save({
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict()
+                }, save_path)
             print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
         # self playing the game
@@ -262,7 +265,7 @@ def server_game_loop(
 def _simulate_one_game(model: TablutNet):
     player = random.choice([Player.WHITE, Player.BLACK])
     # player_search_name, player_search = _random_search_profile(model)
-    player_search_name, player_search = ("mcts_deep_model", mcts_deep_model(model, 100))
+    player_search_name, player_search = _random_search_profile(model)
     opp_search_name, opp_search = _random_search_profile(model)
 
     start_time = datetime.datetime.now()
@@ -291,24 +294,24 @@ def _random_search_profile(
     default_branching = 10
 
     searches = [
-        ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
-        (
-            "alpha_beta_value_model",
-            alpha_beta_value_model(model, default_depth, default_branching),
-        ),
-        (
-            "alpha_beta_policy_model",
-            alpha_beta_policy_model(model, default_depth, default_branching),
-        ),
-        (
-            "alpha_beta_full_model",
-            alpha_beta_full_model(model, default_depth, default_branching),
-        ),
-        ("model_value_maximization", model_value_maximization(model)),
+        # ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
+        # (
+        #     "alpha_beta_value_model",
+        #     alpha_beta_value_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_policy_model",
+        #     alpha_beta_policy_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_full_model",
+        #     alpha_beta_full_model(model, default_depth, default_branching),
+        # ),
+        # ("model_value_maximization", model_value_maximization(model)),
         ("model_greedy_sampling", model_greedy_sampling(model)),
-        ("mcts_fixed_model", mcts_fixed_model(model, 25, 90)),
-        ("mcts_deep_model", mcts_deep_model(model, 90)),
-        ("mcts_shallow_model", mcts_shallow_model(model, 90)),
+        # ("mcts_fixed_model", mcts_fixed_model(model, 25, 90)),
+        # ("mcts_deep_model", mcts_deep_model(model, 90)),
+        # ("mcts_shallow_model", mcts_shallow_model(model, 90)),
     ]
     return random.choice(searches)
 
