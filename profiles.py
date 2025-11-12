@@ -9,7 +9,7 @@ from tablut import GameState, Player, BLACK_PIECES, WHITE_PIECES, MAX_PAWN_MOVES
 from utils import rescale
 
 
-# This model contains various functions that return a search strategy (ie a function with type
+# This file contains various functions that return a search strategy (ie a function with type
 # GameState -> GameState) that can be used as an argument to `client.play_game` to play one
 # game with that playstyle. Useful to sample different algorithms when selfplaying
 
@@ -23,7 +23,9 @@ def mcts_shallow_model(
     model: TablutNet,
     time_limit_s: float = 55,
 ) -> Callable[[GameState], GameState]:
-    return monte_carlo_tree_search(model.policy, _network_value_heuristic(model))
+    return monte_carlo_tree_search(
+        model.policy, _network_value_heuristic(model), time_limit_s
+    )
 
 
 def mcts_fixed_model(
@@ -31,14 +33,18 @@ def mcts_fixed_model(
     max_depth: int,
     time_limit_s: float = 55,
 ) -> Callable[[GameState], GameState]:
-    return monte_carlo_tree_search(model.policy, _model_rollout(model, max_depth))
+    return monte_carlo_tree_search(
+        model.policy, _model_rollout(model, max_depth), time_limit_s
+    )
 
 
 def mcts_deep_model(
     model: TablutNet,
     time_limit_s: float = 55,
 ) -> Callable[[GameState], GameState]:
-    return monte_carlo_tree_search(model.policy, _model_rollout(model, float("inf")))
+    return monte_carlo_tree_search(
+        model.policy, _model_rollout(model, float("inf")), time_limit_s
+    )
 
 
 def alpha_beta_basic(

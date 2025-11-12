@@ -14,25 +14,28 @@ import argparse
 
 if __name__ == "__main__":
     res = flag_manager().res
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cpu")
+    print(f"running on {device}")
     model = TablutNet(res=res).to(device)
+    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_2.pth"
+    model.load_state_dict(torch.load(checkpoint_path))
     optimizer = Adam(model.parameters(), lr=1e-4)
     path = "checkpoints/tablut_model_checkpoint_iter.pth"
     if os.path.isfile(path):
         print(f"Loading Checkpoint")
         checkpoint = torch.load("path")
-        model.load_state_dict(checkpoint['state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
+        model.load_state_dict(checkpoint["state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
     loss_fn = MSELoss()
 
     train(
         model,
         optimizer,
         loss_fn,
-        iterations=2,
-        games=2,
-        train_steps=10,
+        iterations=10,
+        games=1,
+        train_steps=50,
         batch_size=50,
     )
     print("Model and trainer initialized.")

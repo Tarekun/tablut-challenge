@@ -244,9 +244,9 @@ class Board:
         ) -> bool:
             ally_pawn: str = self[ally_row][ally_col]
             valid_ally = (
-                moved_pawn == ally_pawn or
-                self.is_throne(ally_row, ally_col) or
-                self.is_camp(ally_row, ally_col)
+                moved_pawn == ally_pawn
+                or self.is_throne(ally_row, ally_col)
+                or self.is_camp(ally_row, ally_col)
             )
             valid_enemy = (
                 (moved_pawn == Tile.WHITE.value or moved_pawn == Tile.KING.value)

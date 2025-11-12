@@ -124,8 +124,10 @@ def monte_carlo_tree_search(
         @property
         def children(self):
             if self._children is None:
+                moves = self.state.next_moves()
+                random.shuffle(moves)
                 self._children = [
-                    MCTSNode(child, self) for child in random.shuffle(self.state.next_moves()) #type: ignore
+                    MCTSNode(child, self) for child in moves  # type: ignore
                 ]
 
             return self._children
@@ -157,14 +159,12 @@ def monte_carlo_tree_search(
                 self.parent.backpropagate(result)
 
     def search_algoritm(root_state: GameState) -> GameState:
-        print("MCTS called")
         root = MCTSNode(root_state)
         player = root_state.turn_player
         exp_const = 2.5
 
         start_time = time.time()
         end_time = start_time + time_limit_s
-        print(f"start time {start_time} end time {end_time}, execution time: {end_time - start_time}")
         iterations = 0
 
         while time.time() < end_time:
