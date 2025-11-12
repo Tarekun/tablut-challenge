@@ -68,7 +68,6 @@ def latest_experiences() -> list[tuple[GameState, GameState, int]]:
 def persist_self_play_run(
     experiences: list[tuple[GameState, GameState, int]], analytics: list[dict]
 ):
-    counter = 0
     mapped_experiences = []
     for state, move, outcome in experiences:
         state_board = state.board.board

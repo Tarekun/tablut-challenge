@@ -288,24 +288,24 @@ def _random_search_profile(
     default_branching = 9
 
     searches = [
-        # ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
-        # (
-        #     "alpha_beta_value_model",
-        #     alpha_beta_value_model(model, default_depth, default_branching),
-        # ),
-        # (
-        #     "alpha_beta_policy_model",
-        #     alpha_beta_policy_model(model, default_depth, default_branching),
-        # ),
-        # (
-        #     "alpha_beta_full_model",
-        #     alpha_beta_full_model(model, default_depth, default_branching),
-        # ),
-        # ("model_value_maximization", model_value_maximization(model)),
+        ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
+        (
+            "alpha_beta_value_model",
+            alpha_beta_value_model(model, default_depth, default_branching),
+        ),
+        (
+            "alpha_beta_policy_model",
+            alpha_beta_policy_model(model, default_depth, default_branching),
+        ),
+        (
+            "alpha_beta_full_model",
+            alpha_beta_full_model(model, default_depth, default_branching),
+        ),
+        ("model_value_maximization", model_value_maximization(model)),
         ("model_greedy_sampling", model_greedy_sampling(model)),
-        # ("mcts_fixed_model", mcts_fixed_model(model, 25, 90)),
-        # ("mcts_deep_model", mcts_deep_model(model, 90)),
-        # ("mcts_shallow_model", mcts_shallow_model(model, 90)),
+        ("mcts_fixed_model", mcts_fixed_model(model, 25, 90)),
+        ("mcts_deep_model", mcts_deep_model(model, 90)),
+        ("mcts_shallow_model", mcts_shallow_model(model, 90)),
     ]
     return random.choice(searches)
 
