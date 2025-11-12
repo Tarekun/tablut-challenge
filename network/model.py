@@ -37,41 +37,37 @@ def embed_board(board: Board) -> Tensor:
 
 def embed_game_state(
     state: GameState,
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor]:
     """Returns a tuple containing game state elements as tensor. First element is the board,
-    second is the 1-hot-encoding of we're playing as and third is the turn player"""
+    second is the 1-hot-encoding of the turn player"""
     return (
         embed_board(state.board),
-        embed_player(state.playing_as),
         embed_player(state.turn_player),
     )
 
 
 def embed_batch_states(
     states: list[GameState],
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Batch a list of GameStates into tensors suitable for CNN input."""
     boards = []
-    playing_as = []
     turn_players = []
 
     for s in states:
-        b, p, t = embed_game_state(s)
+        b, t = embed_game_state(s)
         boards.append(b)
-        playing_as.append(p)
         turn_players.append(t)
 
     board_batch = torch.stack(boards)  # (N, C, H, W)
-    playing_as_batch = torch.cat(playing_as)  # (N, 2)
     turn_players_batch = torch.cat(turn_players)  # (N, 2)
 
-    return board_batch, playing_as_batch, turn_players_batch
+    return board_batch, turn_players_batch
 
 
 class TablutNet(nn.Module):
     def __init__(self, in_channels: int = 3, res: bool = False):
         super().__init__()
-        
+
         self.res = res
 
         conv_filters = [in_channels, 32, 64, 128]
@@ -95,13 +91,12 @@ class TablutNet(nn.Module):
         # Residual Connection
         self.downsample = nn.Sequential(
             nn.Conv2d(conv_filters[1], conv_filters[3], kernel_size=1),
-            nn.BatchNorm2d(conv_filters[3])
+            nn.BatchNorm2d(conv_filters[3]),
         )
         self.bn3 = nn.BatchNorm2d(conv_filters[3])
 
-
         # FCL head
-        extra_features = 2 * 2  # 2 features 1-hot-encoded to a 2 dimensional vector
+        extra_features = 2  # 1 features 1-hot-encoded to a 2 dimensional vector
         hidden_size = 750
         # hidden_size = conv_output_size // 8
         self.fc = nn.Linear(conv_output_size + extra_features, hidden_size)
@@ -115,9 +110,10 @@ class TablutNet(nn.Module):
     def _feature_extraction(self, game_state: GameState | list[GameState]):
         """Embed single or batch of states → flattened features."""
         if isinstance(game_state, list):
-            board, playing_as, turn_player = embed_batch_states(game_state)
+
+            board, turn_player = embed_batch_states(game_state)
         else:
-            board, playing_as, turn_player = embed_game_state(game_state)
+            board, turn_player = embed_game_state(game_state)
             board = board.unsqueeze(0)  # add batch dimension for consistency
 
         x = board.to(next(self.parameters()).device)
@@ -132,7 +128,7 @@ class TablutNet(nn.Module):
         x = F.relu(x)
         x = x.view(x.size(0), -1)
 
-        extra_features = torch.cat([turn_player, playing_as], dim=1).to(x.device)
+        extra_features = torch.cat([turn_player], dim=1).to(x.device)
         x = torch.cat((x, extra_features), dim=1)
         x = F.relu(self.fc(x))
         return x
