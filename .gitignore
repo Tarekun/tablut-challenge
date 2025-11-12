@@ -2,9 +2,6 @@
 venv
 /**/__pycache__
 .aider*
-test.py
-create_handcrafted.py
-trainruns/handcrafted.json
 *.log
 
 # Snyk Security Extension - AI Rules (auto-generated)
