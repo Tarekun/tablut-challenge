@@ -100,10 +100,17 @@ def transform_state(
 def persist_self_play_run(
     experiences: list[tuple[GameState, GameState, int]], analytics: list[dict]
 ):
+    counter = 0
     mapped_experiences = []
     for state, move, outcome in experiences:
-        state_dict = {"board": state.board.board, "turn": state.turn.value}
-        move_dict = {"board": move.board.board, "turn": move.turn.value}
+        state_board = state.board.board
+        move_board = move.board.board
+        if isinstance(state_board, np.ndarray):
+            state_board = state_board.tolist()
+        if isinstance(move_board, np.ndarray):
+            move_board = move_board.tolist()
+        state_dict = {"board": state_board, "turn": state.turn.value}
+        move_dict = {"board": move_board, "turn": move.turn.value}
         experience_dict = {"state": state_dict, "move": move_dict, "outcome": outcome}
         mapped_experiences.append(experience_dict)
 

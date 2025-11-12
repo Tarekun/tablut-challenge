@@ -2,7 +2,7 @@
 venv
 /**/__pycache__
 .aider*
-
+test.py
 *.log
 
 # Snyk Security Extension - AI Rules (auto-generated)

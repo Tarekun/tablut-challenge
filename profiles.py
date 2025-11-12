@@ -304,6 +304,7 @@ def _model_rollout(
                     return -1
             else:
                 return model.value(state)
+                
 
     return implementation
 

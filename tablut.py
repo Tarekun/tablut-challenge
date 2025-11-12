@@ -474,6 +474,7 @@ class GameState:
             playing_as=parent_state.playing_as,
             turn=parent_state.turn,
             turn_num=parent_state.turn_num,
+            previous=parent_state.previous,
         )
 
     def __str__(self) -> str:
@@ -482,6 +483,10 @@ class GameState:
 
     def __eq__(self, other):
         return self.turn_player == other.turn_player and self.board == other.board
+
+    @property
+    def previous(self):
+        return self._previous
 
     @property
     def board(self) -> Board:
@@ -502,10 +507,6 @@ class GameState:
     @property
     def turn_num(self) -> int:
         return self._turn_num
-
-    @property
-    def previous(self):
-        return self._previous
 
     def next_moves(self):
         moves = []
