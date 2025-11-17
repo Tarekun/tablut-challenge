@@ -6,7 +6,7 @@ from network.training import run_self_play_games, train
 from network.model import TablutNet
 import torch.utils.benchmark as benchmark
 import torch
-from torch.optim import Adam
+from torch.optim import Adam, AdamW
 from torch.nn import MSELoss
 import time
 import argparse
@@ -18,9 +18,10 @@ if __name__ == "__main__":
     # device = torch.device("cpu")
     print(f"running on {device}")
     model = TablutNet(res=res).to(device)
-    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_20251116_181721.pth"
+    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_20251117_085104.pth"
     model.load_state_dict(torch.load(checkpoint_path))
-    optimizer = Adam(model.parameters(), lr=1e-4)
+    # optimizer = Adam(model.parameters(), lr=1e-4)
+    optimizer = AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
     path = "checkpoints/tablut_model_checkpoint_iter.pth"
     if os.path.isfile(path):
         print(f"Loading Checkpoint")
@@ -34,7 +35,7 @@ if __name__ == "__main__":
         optimizer,
         loss_fn,
         iterations=20,
-        games=1,
+        games=2,
         train_steps=200,
         batch_size=50,
     )

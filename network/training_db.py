@@ -45,8 +45,8 @@ def create_timestamped_json_file(base_filename, data):
 def latest_experiences() -> list[tuple[GameState, GameState, int]]:
     files = glob.glob("trainruns/experiences_*.json")
     files.sort(reverse=True)
-    latest_files = files[:5]
-    latest_files.append("trainruns/handcraftedExperiences.json")
+    latest_files = files[:7]
+    # latest_files.append("trainruns/handcraftedExperiences.json")
 
     # fetch some experiences from the db
     all_experiences: list[tuple[GameState, GameState, int]] = []
