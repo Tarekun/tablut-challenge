@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # device = torch.device("cpu")
     print(f"running on {device}")
     model = TablutNet(res=res).to(device)
-    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_2.pth"
+    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_20251116_181721.pth"
     model.load_state_dict(torch.load(checkpoint_path))
     optimizer = Adam(model.parameters(), lr=1e-4)
     path = "checkpoints/tablut_model_checkpoint_iter.pth"
@@ -33,9 +33,9 @@ if __name__ == "__main__":
         model,
         optimizer,
         loss_fn,
-        iterations=10,
+        iterations=20,
         games=1,
-        train_steps=50,
+        train_steps=200,
         batch_size=50,
     )
     print("Model and trainer initialized.")

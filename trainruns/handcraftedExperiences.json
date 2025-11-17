@@ -2447,5 +2447,346 @@
             "turn": "WHITE"
         },
         "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["BLACK","WHITE","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["BLACK","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["BLACK","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["BLACK","WHITE","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "outcome": -1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"]
+            ],
+            "turn": "WHITE"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"]
+            ],
+            "turn": "BLACK"
+        },
+        "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"]
+            ],
+            "turn": "BLACK"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"]
+            ],
+            "turn": "WHITE"
+        },
+        "outcome": -1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","WHITE","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "outcome": -1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY"],
+                ["WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY"],
+                ["WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","WHITE","EMPTY","EMPTY"],
+                ["WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "outcome": -1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","BLACK","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","BLACK","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","BLACK","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "outcome": 1
+    },
+    {
+        "state": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","WHITE","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","BLACK","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "WHITE"
+        },
+        "move": {
+            "board": [
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","BLACK","EMPTY","WHITE","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","KING","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","BLACK","BLACK","EMPTY","EMPTY","EMPTY","EMPTY"],
+                ["EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"]
+            ],
+            "turn": "BLACK"
+        },
+        "outcome": -1
     }
 ]
