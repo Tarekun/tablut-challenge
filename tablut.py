@@ -77,6 +77,14 @@ class Tile(Enum):
     KING = "KING"
     # THRONE = "THRONE"
 
+    @staticmethod
+    def is_black(tile: str):
+        return tile == Tile.BLACK.value
+
+    @staticmethod
+    def is_white(tile: str):
+        return tile == Tile.WHITE.value or tile == Tile.KING.value
+
 
 class Board:
     def __init__(self, board: list[list[str]]):
@@ -244,9 +252,18 @@ class Board:
         ) -> bool:
             ally_pawn: str = self[ally_row][ally_col]
             valid_ally = (
-                moved_pawn == ally_pawn
-                or self.is_throne(ally_row, ally_col)
-                or self.is_camp(ally_row, ally_col)
+                (
+                    (Tile.is_black(moved_pawn) and Tile.is_black(ally_pawn))
+                    or (Tile.is_white(moved_pawn) and Tile.is_white(ally_pawn))
+                )
+                or (
+                    self.is_throne(ally_row, ally_col)
+                    and self.is_empty(ally_row, ally_col)
+                )
+                or (
+                    self.is_camp(ally_row, ally_col)
+                    and self.is_empty(ally_row, ally_col)
+                )
             )
             valid_enemy = (
                 (moved_pawn == Tile.WHITE.value or moved_pawn == Tile.KING.value)
@@ -458,7 +475,7 @@ class GameState:
         )
 
     def __str__(self) -> str:
-        header = f"PLAYNG AS: {self._playing_as}\nTURN: {self._turn_player}"
+        header = f"TURN: {self._turn_player}"
         return f"{header}\n{self.board}"
 
     def __eq__(self, other):
