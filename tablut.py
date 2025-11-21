@@ -240,13 +240,15 @@ class Board:
         the captured pawn. `row` and `col` refer to the tile the last pawn moved to"""
 
         def _generic_capture(
-            moved_pawn: str, enemy_pawn: str, ally_row: int, ally_col: int
+            moved_pawn: str, enemy_pawn: str, ally_row: int, ally_col: int, enemy_row: int, enemy_col: int
         ) -> bool:
             ally_pawn: str = self[ally_row][ally_col]
             valid_ally = (
-                moved_pawn == ally_pawn or
+                moved_pawn == ally_pawn or 
+                moved_pawn == Tile.KING.value and ally_pawn == Tile.WHITE.value or
+                moved_pawn == Tile.WHITE.value and ally_pawn == Tile.KING.value or
                 self.is_throne(ally_row, ally_col) or
-                self.is_camp(ally_row, ally_col)
+                self.is_camp(ally_row, ally_col) and not self.is_camp(enemy_row, enemy_col)
             )
             valid_enemy = (
                 (moved_pawn == Tile.WHITE.value or moved_pawn == Tile.KING.value)
@@ -282,7 +284,7 @@ class Board:
                         if self.check_inside_board(
                             ally_row, ally_col
                         ) and not _generic_capture(
-                            pawn, enemy_pawn, ally_row, ally_col
+                            pawn, enemy_pawn, ally_row, ally_col, enemy_row, enemy_col
                         ):
                             fully_cornered = False
 
@@ -290,7 +292,7 @@ class Board:
                         self._previous = copy.deepcopy(self.board)
                         self.board[enemy_row][enemy_col] = Tile.EMPTY.value
                 # otherwise run generic capture check
-                elif _generic_capture(pawn, enemy_pawn, ally_row, ally_col):
+                elif _generic_capture(pawn, enemy_pawn, ally_row, ally_col, enemy_row, enemy_col):
                     self._previous = copy.deepcopy(self.board)
                     self.board[enemy_row][enemy_col] = Tile.EMPTY.value
 
