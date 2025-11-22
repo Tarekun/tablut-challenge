@@ -115,6 +115,7 @@ def monte_carlo_tree_search(
             self.state: GameState = state
             self.parent: MCTSNode | None = parent
             self._children: list[MCTSNode] | None = None
+            self._probs: list[float] | None = None
             self.visits = 0
             self.total_score = 0
 
@@ -132,10 +133,16 @@ def monte_carlo_tree_search(
 
             return self._children
 
+        @property
+        def child_probabilities(self):
+            if self._probs is None:
+                child_states = [child.state for child in self.children]
+                self._probs = probability(child_states)
+            return self._probs
+
         def best_child(self, exp_const: float):
             """Picks the next child to visit using PUCT score"""
-            child_states = [child.state for child in self.children]
-            probs = probability(child_states)
+            probs = self.child_probabilities
             total_visits = sum(child.visits for child in self.children)
 
             def puct_score(node: "MCTSNode", prior: float):
