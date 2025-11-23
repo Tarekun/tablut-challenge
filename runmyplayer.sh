@@ -10,4 +10,4 @@ if [[ $# -ne 3 ]] ; then
 fi
 
 source /home/tablut/tablut/.venv/bin/activate
-python /home/tablut/tablut/main.py "$1" "$2" "$3"
+python3 /home/tablut/tablut/main.py "$1" "$2" "$3"
