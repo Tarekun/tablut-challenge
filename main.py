@@ -27,6 +27,6 @@ else:
 device = torch.device("cpu")
 model = TablutNet().to(device)
 checkpoint_path = "checkpoints/final_checkpoint.pth"
-model.load_state_dict(torch.load(checkpoint_path))
+model.load_state_dict(torch.load(checkpoint_path, map_location=device))
 search = mcts_fixed_model(model, 20, timeout - 5)
 play_game(player, "Tulbat", server_ip, search)
