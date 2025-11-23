@@ -82,7 +82,7 @@ def parse_state(
     """Parses the JSON string of the game state provided by the server. playing_as is optional
     and if left unspecified will be set to the turn player"""
 
-    return create_dict_state(json.loads(json_string))
+    return create_dict_state(json.loads(json_string), playing_as)
 
 
 def create_dict_state(
