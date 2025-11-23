@@ -7,6 +7,7 @@ import threading
 import time
 import torch
 import torch.nn.functional as F
+import copy
 from client import play_game, parse_state
 from tablut import Board, GameState, Player, Tile
 from profiles import *
@@ -19,10 +20,11 @@ def train(
     model: TablutNet,
     optimizer,
     loss_fn,
-    iterations: int = 3,
-    games: int = 5,
-    train_steps: int = 1,
-    batch_size: int = 32,
+    last_iter: int = 0,
+    iterations: int = 10,
+    games: int = 1,
+    train_steps: int = 200,
+    batch_size: int = 50,
 ):
     """
     Main training loop. This runs `games` number of games each iteration per `iterations` times, collecting
@@ -301,7 +303,6 @@ def server_game_loop(
 
 def _simulate_one_game(model: TablutNet):
     player = random.choice([Player.WHITE, Player.BLACK])
-    # player_search_name, player_search = _random_search_profile(model)
     player_search_name, player_search = _random_search_profile(model)
     # player_search_name, player_search = ("mcts_deep_model", mcts_deep_model(model, 100))
     opp_search_name, opp_search = _random_search_profile(model)
