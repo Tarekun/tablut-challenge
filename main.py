@@ -4,14 +4,20 @@ from profiles import mcts_fixed_model
 from client import play_game
 from network.model import TablutNet
 from tablut import Player
+import os
 
+# suppress NNPACK warnings
+os.environ["PYTORCH_DISABLE_NNPACK"] = "1"
 
 if len(sys.argv) != 4:
     print("Usage: python main.py <player> <timeout> <server ip>")
     sys.exit(1)
 
 player_input = sys.argv[1].lower()
-timeout = int(sys.argv[2])
+try:
+    timeout = int(sys.argv[2])
+except:
+    timeout = 60
 server_ip = sys.argv[3]
 
 if player_input == "white":
@@ -28,5 +34,5 @@ device = torch.device("cpu")
 model = TablutNet().to(device)
 checkpoint_path = "checkpoints/final_checkpoint.pth"
 model.load_state_dict(torch.load(checkpoint_path, map_location=device))
-search = mcts_fixed_model(model, 20, timeout - 5)
+search = mcts_fixed_model(model, 10, timeout - 5)
 play_game(player, "Tulbat", server_ip, search)
