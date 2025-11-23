@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print(f"running on {device}")
     model = TablutNet(res=res).to(device)
     optimizer = AdamW(model.parameters(), lr=5e-5)
-    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_20251123_121300.pth"
+    checkpoint_path = "checkpoints/final_checkpoint.pth"
     model.load_state_dict(torch.load(checkpoint_path))
     loss_fn = MSELoss()
 

@@ -19,13 +19,10 @@ def play_turn(
     our turn"""
     state_json = _read_string_from_stream(client_socket)
     game_state, turn = parse_state(state_json, playing_as)
-    print(f"current game state:\n{game_state}")
 
     if turn.plays(playing_as):
-        print(f"It's our turn ({playing_as}). Calculating move...")
         move = search_algorithm(game_state)
         action = game_state.board.action_to(move.board)
-        print(f"New State:\n{move}")
         _write_string_to_stream(client_socket, json.dumps(action))
         return (None, game_state, move)
 
@@ -40,7 +37,6 @@ def play_turn(
         return (0, game_state, None)
 
     else:
-        print(f"It's opponent's turn. Waiting for next state...")
         return (None, None, None)
 
 
