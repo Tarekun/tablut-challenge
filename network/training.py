@@ -1,5 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import os
+import copy
 import random
 import subprocess
 import threading
@@ -7,7 +6,7 @@ import time
 import torch
 import torch.nn.functional as F
 from client import play_game, parse_state
-from tablut import Board, GameState, Player
+from tablut import Board, GameState, Player, Tile
 from profiles import *
 from network.model import TablutNet
 from network.training_db import persist_self_play_run, latest_experiences
@@ -32,6 +31,10 @@ def train(
     for iteration in range(iterations):
         print(f"Starting Iteration {iteration + 1}/{iterations}")
 
+        # self playing the game
+        print(f"\tRunning {games} self-play games...")
+        run_self_play_games(model, num_games=games)
+
         # training on past experiences
         print(
             f"\tOptimizing model for {train_steps} steps with batch size of {batch_size}..."
@@ -45,18 +48,12 @@ def train(
 
         print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
         # save model checkpoint periodically
-        if (iteration + 1) % 2 == 0:
-            save_path = f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth"
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            torch.save({
-                "model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optimizer.state_dict()
-                }, save_path)
-            print(f"  Model checkpoint saved at iteration {iteration + 1}")
-
-        # self playing the game
-        print(f"\tRunning {games} self-play games...")
-        run_self_play_games(model, num_games=games)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        torch.save(
+            model.state_dict(),
+            f"checkpoints/tablut_model_checkpoint_iter_{timestamp}.pth",
+        )
+        print(f"  Model checkpoint saved at iteration {timestamp}")
 
 
 def train_step(
@@ -98,6 +95,7 @@ def train_step(
                 print(batch[i][0].board.board, end="\n\n\n")
                 print(target_move)
                 print(target_move.board.board, end="\n\n\n")
+                exit(1)
         if len(policy_groups) != len(target_indices):
             raise Exception(
                 "Some picked actions didnt match anyone in the search space apparently:"
@@ -150,25 +148,33 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, GameState, 
     game_history: list[tuple[GameState, GameState, int]] = []
     analytics = []
     total_duration = 0
+    for game_num in range(num_games):
+        analytics_record, experiences = _simulate_one_game(model)
+        analytics.append(analytics_record)
+        game_history.extend(experiences)
 
-    with ThreadPoolExecutor() as executor:
-        future_to_game = {
-            executor.submit(_simulate_one_game, model): i for i in range(num_games)
-        }
+        duration = analytics_record["duration_s"]
+        total_duration += duration
+        print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
 
-        for future in as_completed(future_to_game):
-            game_num = future_to_game[future]
-            try:
-                analytics_record, experiences = future.result()
-                analytics.append(analytics_record)
-                game_history.extend(experiences)
+    # with ThreadPoolExecutor() as executor:
+    #     future_to_game = {
+    #         executor.submit(_simulate_one_game, model): i for i in range(num_games)
+    #     }
 
-                duration = analytics_record["duration_s"]
-                total_duration += duration
-                print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
+    #     for future in as_completed(future_to_game):
+    #         game_num = future_to_game[future]
+    #         try:
+    #             analytics_record, experiences = future.result()
+    #             analytics.append(analytics_record)
+    #             game_history.extend(experiences)
 
-            except Exception as exc:
-                print(f"Game {game_num} generated an exception: {exc}")
+    #             duration = analytics_record["duration_s"]
+    #             total_duration += duration
+    #             print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
+
+    #         except Exception as exc:
+    #             print(f"Game {game_num} generated an exception: {exc}")
 
     avg_duration = total_duration / num_games
     print(
@@ -195,7 +201,37 @@ def self_contained_game_loop(
     while not game_state.is_end_state():
         print(f"\n{game_state}")
         turn_search = player_search if player == game_state.turn_player else opp_search
-        move = turn_search(game_state)
+        try:
+            move = turn_search(game_state)
+        except KeyboardInterrupt:
+            while True:
+                print("enter move")
+                s = input()
+                if s == "q":
+                    move = turn_search(game_state)
+                    break
+                # trin & parse coordinates
+                args = s.replace(" ", "").split(",")  # 0,1,0,5
+                row_from, col_from = int(args[0]), int(args[1])
+                row_to, col_to = int(args[2]), int(args[3])
+                # if valid update the state
+                if game_state.board.valid_move(row_from, col_from, row_to, col_to):
+                    new_board = copy.deepcopy(game_state.board.board)
+                    new_board[row_to][col_to] = new_board[row_from][col_from]
+                    new_board[row_from][col_from] = Tile.EMPTY.value
+                    new_board = Board(new_board)
+                    new_board.solve_captures(row_to, col_to)
+
+                    move = GameState(
+                        new_board,
+                        game_state.playing_as,
+                        game_state.turn.complement(),
+                    )
+                    break
+                else:
+                    print(
+                        "input a valid move in format `row_from, col_from, row_to, col_to`"
+                    )
         experience_buffer.append((game_state, move))
 
         game_state = move  # note: this assumes move solved captured pawn
@@ -264,8 +300,8 @@ def server_game_loop(
 
 def _simulate_one_game(model: TablutNet):
     player = random.choice([Player.WHITE, Player.BLACK])
-    # player_search_name, player_search = _random_search_profile(model)
-    player_search_name, player_search = ("mcts_deep_model", mcts_deep_model(model, 100))
+    player_search_name, player_search = _random_search_profile(model)
+    # player_search_name, player_search = ("mcts_deep_model", mcts_deep_model(model, 100))
     opp_search_name, opp_search = _random_search_profile(model)
 
     start_time = datetime.datetime.now()
@@ -294,24 +330,24 @@ def _random_search_profile(
     default_branching = 10
 
     searches = [
-        ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
-        (
-            "alpha_beta_value_model",
-            alpha_beta_value_model(model, default_depth, default_branching),
-        ),
-        (
-            "alpha_beta_policy_model",
-            alpha_beta_policy_model(model, default_depth, default_branching),
-        ),
-        (
-            "alpha_beta_full_model",
-            alpha_beta_full_model(model, default_depth, default_branching),
-        ),
-        ("model_value_maximization", model_value_maximization(model)),
-        ("model_greedy_sampling", model_greedy_sampling(model)),
-        ("mcts_fixed_model", mcts_fixed_model(model, 25, 90)),
+        # ("alpha_beta_basic", alpha_beta_basic(default_depth, default_branching)),
+        # (
+        #     "alpha_beta_value_model",
+        #     alpha_beta_value_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_policy_model",
+        #     alpha_beta_policy_model(model, default_depth, default_branching),
+        # ),
+        # (
+        #     "alpha_beta_full_model",
+        #     alpha_beta_full_model(model, default_depth, default_branching),
+        # ),
+        # ("model_value_maximization", model_value_maximization(model)),
+        # ("model_greedy_sampling", model_greedy_sampling(model)),
+        ("mcts_fixed_model", mcts_fixed_model(model, 20, 90)),
         ("mcts_deep_model", mcts_deep_model(model, 90)),
-        ("mcts_shallow_model", mcts_shallow_model(model, 90)),
+        # ("mcts_shallow_model", mcts_shallow_model(model, 90)),
     ]
     return random.choice(searches)
 
