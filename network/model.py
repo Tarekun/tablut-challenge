@@ -3,6 +3,7 @@ from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from typing import Union
 from tablut import BOARD_LENGTH, GameState, Board, Player, Tile
 
 
@@ -107,7 +108,7 @@ class TablutNet(nn.Module):
         self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=0)
 
-    def _feature_extraction(self, game_state: GameState | list[GameState]):
+    def _feature_extraction(self, game_state: Union[GameState, list[GameState]]):
         """Embed single or batch of states → flattened features."""
         if isinstance(game_state, list):
             board, turn_player = embed_batch_states(game_state)
@@ -141,7 +142,7 @@ class TablutNet(nn.Module):
         probs = self.softmax(logits)
         return probs
 
-    def value(self, state: GameState | list[GameState]):
+    def value(self, state: Union[GameState, list[GameState]]):
         """
         Computes scalar value(s) ∈ [-1, 1] for given state(s).
         - Single GameState → single scalar tensor
@@ -160,5 +161,5 @@ class TablutNet(nn.Module):
         logits = self.policy_head(x).squeeze(-1)
         return logits
 
-    def forward(self, game_state: GameState | list[GameState]):
+    def forward(self, game_state: Union[GameState, list[GameState]]):
         pass

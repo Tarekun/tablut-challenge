@@ -1,7 +1,7 @@
 import socket
 import json
 import struct
-from typing import Callable
+from typing import Callable, Union
 from tablut import Board, GameState, Player, Turn
 
 
@@ -13,7 +13,7 @@ def play_turn(
     client_socket: socket.socket,
     playing_as: Player,
     search_algorithm: Callable[[GameState], GameState],
-) -> tuple[int | None, GameState | None, GameState | None]:
+) -> tuple[Union[int, None], Union[GameState, None], Union[GameState, None]]:
     """Plays one turn of the game. Returns a tuple containig a int | None in the first element
     valued with the game's outcome iff this was the last turn, the GameState analized if it was
     our turn"""
@@ -77,7 +77,7 @@ def play_game(
 
 ########## HELPER FUNCTIONS
 def parse_state(
-    json_string: str, playing_as: Player | None = None
+    json_string: str, playing_as: Union[Player, None] = None
 ) -> tuple[GameState, Turn]:
     """Parses the JSON string of the game state provided by the server. playing_as is optional
     and if left unspecified will be set to the turn player"""
@@ -86,7 +86,7 @@ def parse_state(
 
 
 def create_dict_state(
-    state: dict, playing_as: Player | None = None
+    state: dict, playing_as: Union[Player, None] = None
 ) -> tuple[GameState, Turn]:
     turn = None
     for member in Turn:

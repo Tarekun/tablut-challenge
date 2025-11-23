@@ -7,6 +7,7 @@ from search import alpha_beta, monte_carlo_tree_search
 from network.model import TablutNet
 from tablut import GameState, Player, BLACK_PIECES, WHITE_PIECES, MAX_PAWN_MOVES
 from utils import rescale
+from typing import Union
 
 
 # This file contains various functions that return a search strategy (ie a function with type
@@ -279,7 +280,7 @@ def _max_depth_criterion(max_depth: int):
 
 ################### REUSABLE ROLLOUT FUNCTIONS
 def _model_rollout(
-    model: TablutNet, max_depth: int | float
+    model: TablutNet, max_depth: Union[int, float]
 ) -> Callable[[GameState], float]:
     def implementation(root_state: GameState) -> float:
         state = root_state
@@ -307,7 +308,7 @@ def _model_rollout(
     return implementation
 
 
-def _random_fixed_depth_rollout(heuristic, max_depth: int | float):
+def _random_fixed_depth_rollout(heuristic, max_depth: Union[int, float]):
     def implementation(root_state: GameState) -> float:
         state = root_state
         depth: int = 0

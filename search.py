@@ -1,7 +1,7 @@
 from functools import reduce
 import math
 import time
-from typing import Callable
+from typing import Callable, Union
 from tablut import GameState
 import random
 
@@ -113,9 +113,9 @@ def monte_carlo_tree_search(
     class MCTSNode:
         def __init__(self, state: GameState, parent=None):
             self.state: GameState = state
-            self.parent: MCTSNode | None = parent
-            self._children: list[MCTSNode] | None = None
-            self._probs: list[float] | None = None
+            self.parent: Union[MCTSNode, None] = parent
+            self._children: Union[list[MCTSNode], None] = None
+            self._probs: Union[list[float], None] = None
             self.visits = 0
             self.total_score = 0
 
