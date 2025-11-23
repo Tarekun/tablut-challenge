@@ -6,8 +6,9 @@ import threading
 import time
 import torch
 import torch.nn.functional as F
+import copy
 from client import play_game, parse_state
-from tablut import Board, GameState, Player
+from tablut import Board, GameState, Player, Tile
 from profiles import *
 from network.model import TablutNet
 from network.training_db import persist_self_play_run, latest_experiences
@@ -18,10 +19,11 @@ def train(
     model: TablutNet,
     optimizer,
     loss_fn,
-    iterations: int = 3,
-    games: int = 5,
-    train_steps: int = 1,
-    batch_size: int = 32,
+    last_iter: int = 0,
+    iterations: int = 10,
+    games: int = 1,
+    train_steps: int = 200,
+    batch_size: int = 50,
 ):
     """
     Main training loop. This runs `games` number of games each iteration per `iterations` times, collecting
@@ -49,14 +51,13 @@ def train(
 
         print(f"\tIteration {iteration + 1} completed. Average Loss: {avg_loss:.6f}")
         # save model checkpoint periodically
-        if (iteration + 1) % 2 == 0:
-            save_path = f"checkpoints/tablut_model_checkpoint_iter_{iteration + 1}.pth"
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
-            torch.save(
-                model.state_dict(),
-                save_path,
-            )
-            print(f"  Model checkpoint saved at iteration {iteration + 1}")
+        save_path = f"checkpoints/tablut_model_checkpoint_iter_{last_iter + iteration + 1}.pth"
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        torch.save({
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict()
+            }, save_path)
+        print(f"  Model checkpoint saved at iteration {iteration + 1}")
 
 
 def train_step(
@@ -143,24 +144,36 @@ def run_self_play_games(model, num_games=1) -> list[tuple[GameState, GameState, 
     analytics = []
     total_duration = 0
 
-    with ThreadPoolExecutor() as executor:
-        future_to_game = {
-            executor.submit(_simulate_one_game, model): i for i in range(num_games)
-        }
+    game_history: list[tuple[GameState, GameState, int]] = []
+    analytics = []
+    total_duration = 0
+    for game_num in range(num_games):
+        analytics_record, experiences = _simulate_one_game(model)
+        analytics.append(analytics_record)
+        game_history.extend(experiences)
 
-        for future in as_completed(future_to_game):
-            game_num = future_to_game[future]
-            try:
-                analytics_record, experiences = future.result()
-                analytics.append(analytics_record)
-                game_history.extend(experiences)
+        duration = analytics_record["duration_s"]
+        total_duration += duration
+        print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
 
-                duration = analytics_record["duration_s"]
-                total_duration += duration
-                print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
+    # with ThreadPoolExecutor() as executor:
+    #     future_to_game = {
+    #         executor.submit(_simulate_one_game, model): i for i in range(num_games)
+    #     }
 
-            except Exception as exc:
-                print(f"Game {game_num} generated an exception: {exc}")
+    #     for future in as_completed(future_to_game):
+    #         game_num = future_to_game[future]
+    #         try:
+    #             analytics_record, experiences = future.result()
+    #             analytics.append(analytics_record)
+    #             game_history.extend(experiences)
+
+    #             duration = analytics_record["duration_s"]
+    #             total_duration += duration
+    #             print(f"Completed game {game_num} simulation in {duration:.2f} seconds")
+
+    #         except Exception as exc:
+    #             print(f"Game {game_num} generated an exception: {exc}")
 
     avg_duration = total_duration / num_games
     print(
@@ -187,7 +200,37 @@ def self_contained_game_loop(
     while not game_state.is_end_state():
         print(f"\n{game_state}")
         turn_search = player_search if player == game_state.turn_player else opp_search
-        move = turn_search(game_state)
+        try:
+            move = turn_search(game_state)
+        except KeyboardInterrupt:
+            while True:
+                print("enter move")
+                s = input()
+                if s == "q":
+                    move = turn_search(game_state)
+                    break
+                # trin & parse coordinates
+                args = s.replace(" ", "").split(",")  # 0,1,0,5
+                row_from, col_from = int(args[0]), int(args[1])
+                row_to, col_to = int(args[2]), int(args[3])
+                # if valid update the state
+                if game_state.board.valid_move(row_from, col_from, row_to, col_to):
+                    new_board = copy.deepcopy(game_state.board.board)
+                    new_board[row_to][col_to] = new_board[row_from][col_from]
+                    new_board[row_from][col_from] = Tile.EMPTY.value
+                    new_board = Board(new_board)
+                    new_board.solve_captures(row_to, col_to)
+
+                    move = GameState(
+                        new_board,
+                        game_state.playing_as,
+                        game_state.turn.complement(),
+                    )
+                    break
+                else:
+                    print(
+                        "input a valid move in format `row_from, col_from, row_to, col_to`"
+                    )
         experience_buffer.append((game_state, move))
 
         game_state = move  # note: this assumes move solved captured pawn
@@ -256,8 +299,8 @@ def server_game_loop(
 
 def _simulate_one_game(model: TablutNet):
     player = random.choice([Player.WHITE, Player.BLACK])
-    # player_search_name, player_search = _random_search_profile(model)
     player_search_name, player_search = _random_search_profile(model)
+    # player_search_name, player_search = ("mcts_deep_model", mcts_shallow_model(model, 100))
     print(f"Selected player search: {player_search_name}")
     opp_search_name, opp_search = _random_search_profile(model)
     print(f"Selected opponent search: {opp_search_name}")

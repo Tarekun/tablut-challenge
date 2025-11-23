@@ -1,5 +1,5 @@
 import os
-from utils import flag_manager
+from utils import flag_manager, get_latest_checkpoint
 from client import parse_state
 from tablut import GameState, Player
 from network.training import run_self_play_games, train
@@ -19,21 +19,22 @@ if __name__ == "__main__":
     print(f"running on {device}")
     model = TablutNet(res=res).to(device)
     optimizer = Adam(model.parameters(), lr=1e-4)
-    path = "checkpoints/tablut_model_checkpoint_iter.pth"
-    if os.path.isfile(path):
-        print(f"Loading Checkpoint")
-        checkpoint = torch.load("path")
-        model.load_state_dict(checkpoint["state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer"])
+    path, last_iter = get_latest_checkpoint("checkpoints", prefix = "tablut_model_checkpoint_iter_", ext = ".pth")  
+    if path:
+        print(f"Loading Checkpoint {path}")
+        checkpoint = torch.load(path)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     loss_fn = MSELoss()
 
     train(
         model,
         optimizer,
         loss_fn,
+        last_iter = last_iter if path else 0,
         iterations=10,
         games=1,
-        train_steps=10,
+        train_steps=200,
         batch_size=50,
     )
     print("Model and trainer initialized.")

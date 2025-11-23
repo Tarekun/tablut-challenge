@@ -136,6 +136,11 @@ def monte_carlo_tree_search(
             """Picks the next child to visit using PUCT score"""
             child_states = [child.state for child in self.children]
             probs = probability(child_states)
+            sorted_indices = sorted(range(len(probs)), key=lambda i: probs[i])
+
+            # applico l'ordinamento a entrambi gli array
+            child_states = [child_states[i] for i in sorted_indices]
+            probs = [probs[i] for i in sorted_indices]
             total_visits = sum(child.visits for child in self.children)
 
             def puct_score(node: "MCTSNode", prior: float):
@@ -187,6 +192,7 @@ def monte_carlo_tree_search(
             # exponential annealing of the exploration constant
             exp_const = 0.95 * exp_const
             iterations += 1
+            
 
         print(f"Completed {iterations} iterations in {time_limit_s} seconds")
         # pick the most visited child

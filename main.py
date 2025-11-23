@@ -1,5 +1,8 @@
 import sys
-from profiles import alpha_beta_basic
+
+import torch
+from network.model import TablutNet
+from profiles import mcts_fixed_model
 from client import play_game
 from tablut import Player
 
@@ -20,5 +23,16 @@ else:
         f"Invalid player. Must be either 'white' or 'black', not {player_input}."
     )
 
-search = alpha_beta_basic(4, 30)
+device = torch.device("cpu")
+print(f"running on {device}")
+model = TablutNet().to(device)
+path = "checkpoints/final_checkpoint.pth"
+if path:
+    print(f"Loading Checkpoint {path}")
+    checkpoint = torch.load(path)
+    print(f"Loaded checkpoint from {path}")
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+
+search = mcts_fixed_model(model)
 play_game(player, "MyPythonBot", server_ip, search)

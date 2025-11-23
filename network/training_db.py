@@ -47,7 +47,7 @@ def latest_experiences() -> list[tuple[GameState, GameState, int]]:
     files = glob.glob("trainruns/experiences_*.json")
     files.sort(reverse=True)
     latest_files = files[:5]
-    # latest_files.append("trainruns/handcraftedExperiences.json")
+    latest_files.append("trainruns/handcraftedExperiences.json")
 
     all_experiences: list[tuple[GameState, GameState, int]] = []
     for file in latest_files:
