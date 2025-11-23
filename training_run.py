@@ -5,6 +5,7 @@ import torch.utils.benchmark as benchmark
 import torch
 from torch.optim import Adam, AdamW
 from torch.nn import MSELoss
+import os
 
 
 if __name__ == "__main__":
@@ -13,15 +14,9 @@ if __name__ == "__main__":
     # device = torch.device("cpu")
     print(f"running on {device}")
     model = TablutNet(res=res).to(device)
-    optimizer = Adam(model.parameters(), lr=1e-4)
-    path = get_latest_checkpoint(
-        "checkpoints", prefix="tablut_model_checkpoint_iter_", ext=".pth"
-    )
-    if path:
-        print(f"Loading Checkpoint {path}")
-        checkpoint = torch.load(path)
-        model.load_state_dict(checkpoint["state_dict"])
-        optimizer.load_state_dict(checkpoint["state_dict"])
+    optimizer = AdamW(model.parameters(), lr=5e-5)
+    checkpoint_path = "checkpoints/tablut_model_checkpoint_iter_20251123_121300.pth"
+    model.load_state_dict(torch.load(checkpoint_path))
     loss_fn = MSELoss()
 
     train(
