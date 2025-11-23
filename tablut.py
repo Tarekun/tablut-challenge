@@ -1,7 +1,7 @@
 from enum import Enum
 import copy
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Union
 
 
 BOARD_LENGTH = 9
@@ -89,7 +89,7 @@ class Tile(Enum):
 class Board:
     def __init__(self, board: list[list[str]]):
         self.board: list[list[str]] = board
-        self._previous: list[list[str]] | None = None
+        self._previous: Union[list[list[str]], None] = None
 
     @property
     def previous(self):
@@ -169,7 +169,7 @@ class Board:
         """Enables board[row] syntax, returns the row"""
         return self.board[row]
 
-    def king_position(self) -> tuple[int | None, int | None]:
+    def king_position(self) -> tuple[Union[int, None], Union[int, None]]:
         for i in range(BOARD_LENGTH):
             for j in range(BOARD_LENGTH):
                 if self[i][j] == Tile.KING.value:
@@ -201,7 +201,7 @@ class Board:
             ]
         )
 
-    def camp_id(self, row: int, col: int) -> str | None:
+    def camp_id(self, row: int, col: int) -> Union[str, None]:
         if (row == 0 and col in (3, 4, 5)) or (row == 1 and col == 4):
             return "top"
         if (row == 8 and col in (3, 4, 5)) or (row == 7 and col == 4):
@@ -455,7 +455,9 @@ class Board:
 
 
 class GameState:
-    def __init__(self, board: Board, playing_as: Player, turn: Turn, previous = None, turn_num=0):
+    def __init__(
+        self, board: Board, playing_as: Player, turn: Turn, previous=None, turn_num=0
+    ):
         self._board = board
         self._playing_as = playing_as
         self._turn_player = Player.WHITE if turn.plays(Player.WHITE) else Player.BLACK
@@ -500,7 +502,7 @@ class GameState:
     @property
     def turn_num(self) -> int:
         return self._turn_num
-    
+
     @property
     def previous(self):
         return self._previous
@@ -518,7 +520,7 @@ class GameState:
                                 self.playing_as,
                                 self.turn.complement(),
                                 turn_num=self.turn_num + 1,
-                                previous = self
+                                previous=self,
                             )
                             for move in pawn_moves
                         ]
@@ -526,7 +528,7 @@ class GameState:
 
         return moves
 
-    def winner(self) -> Player | None | str:
+    def winner(self) -> Union[Player, None, str]:
         previous = self.previous
         for _ in range(3):
             if previous is None:
