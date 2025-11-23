@@ -1,10 +1,13 @@
 import copy
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
 import random
 import subprocess
 import threading
 import time
 import torch
 import torch.nn.functional as F
+import copy
 from client import play_game, parse_state
 from tablut import Board, GameState, Player, Tile
 from profiles import *
@@ -17,10 +20,11 @@ def train(
     model: TablutNet,
     optimizer,
     loss_fn,
-    iterations: int = 3,
-    games: int = 5,
-    train_steps: int = 1,
-    batch_size: int = 32,
+    last_iter: int = 0,
+    iterations: int = 10,
+    games: int = 1,
+    train_steps: int = 200,
+    batch_size: int = 50,
 ):
     """
     Main training loop. This runs `games` number of games each iteration per `iterations` times, collecting
@@ -122,7 +126,6 @@ def train_step(
         raise ValueError(
             f"Eperience buffer contains only {len(experience_buffer)} samples which is less than the required {batch_size} batch size."
         )
-
     # sample a random batch of experiences
     batch = random.sample(experience_buffer, batch_size)
     v_loss = value_loss(batch)
@@ -303,6 +306,7 @@ def _simulate_one_game(model: TablutNet):
     player_search_name, player_search = _random_search_profile(model)
     # player_search_name, player_search = ("mcts_deep_model", mcts_deep_model(model, 100))
     opp_search_name, opp_search = _random_search_profile(model)
+    print(f"Selected opponent search: {opp_search_name}")
 
     start_time = datetime.datetime.now()
     experiences, outcome = self_contained_game_loop(player, player_search, opp_search)

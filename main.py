@@ -1,5 +1,7 @@
 import sys
+
 import torch
+from network.model import TablutNet
 from profiles import mcts_fixed_model
 from client import play_game
 from network.model import TablutNet
@@ -35,4 +37,6 @@ model = TablutNet().to(device)
 checkpoint_path = "checkpoints/final_checkpoint.pth"
 model.load_state_dict(torch.load(checkpoint_path, map_location=device))
 search = mcts_fixed_model(model, 10, timeout - 5)
+# model.load_state_dict(checkpoint["model_state_dict"])
+# model.eval()
 play_game(player, "Tulbat", server_ip, search)

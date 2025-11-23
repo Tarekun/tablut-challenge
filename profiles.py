@@ -31,7 +31,7 @@ def mcts_shallow_model(
 
 def mcts_fixed_model(
     model: TablutNet,
-    max_depth: int,
+    max_depth: int = 10,
     time_limit_s: float = 55,
 ) -> Callable[[GameState], GameState]:
     return monte_carlo_tree_search(
@@ -304,6 +304,7 @@ def _model_rollout(
                     return -1
             else:
                 return model.value(state)
+                
 
     return implementation
 
