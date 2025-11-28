@@ -1,4 +1,4 @@
-# Tablut Challenge 2021
+# Tablut Challenge 2025
 
 Project for the Tablut Competition, course _Foundations of Artificial Intelligence – Module 1_.
 The project involves the creation of an agent that plays the Tablut game, a medieval asymmetric board game.
@@ -38,4 +38,5 @@ python training_run.py
 ```
 
 The final search algoritm the competed in the challenge is mcts_deep_model, which combines the policy head value with the PUCT score and uses the heuristic head value as a dropout for leaf states.  
+
 
